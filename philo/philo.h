@@ -6,7 +6,7 @@
 /*   By: frafal <frafal@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/01/19 11:13:11 by frafal            #+#    #+#             */
-/*   Updated: 2023/01/20 10:45:40 by frafal           ###   ########.fr       */
+/*   Updated: 2023/01/20 11:44:14 by frafal           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,6 +31,8 @@ typedef struct s_data
 	int				eat_times;
 	struct timeval	tv0;
 	struct timeval	tv1;
+	pthread_t		tid1;
+	pthread_t		tid2;
 }	t_data;
 
 typedef struct s_philo

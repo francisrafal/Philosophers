@@ -6,7 +6,7 @@
 /*   By: frafal <frafal@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/01/19 11:12:03 by frafal            #+#    #+#             */
-/*   Updated: 2023/01/20 10:51:59 by frafal           ###   ########.fr       */
+/*   Updated: 2023/01/20 11:45:22 by frafal           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -58,6 +58,16 @@ unsigned long	get_timestamp_in_ms(t_data *data)
 	return (msec_elapsed);
 }
 
+void	*thread_routine(void *data)
+{
+	pthread_t	tid;
+
+	(void)data;
+	tid = pthread_self();
+	printf("Thread: %ld\n", tid);
+	return (NULL);
+}
+
 int	main(int argc, char **argv)
 {
 	t_data	*data;
@@ -68,9 +78,9 @@ int	main(int argc, char **argv)
 	if (data == NULL)
 		return (1);
 	gettimeofday(&(data->tv0), NULL);
-	usleep(10000);
-	printf("timestamp: %ld ms\n", get_timestamp_in_ms(data));
-	usleep(1000000);
-	printf("timestamp: %ld ms\n", get_timestamp_in_ms(data));
+	pthread_create(&(data->tid1), NULL, thread_routine, NULL);
+	pthread_create(&(data->tid2), NULL, thread_routine, NULL);
+	pthread_join(data->tid1, NULL);
+	pthread_join(data->tid2, NULL);
 	return (0);
 }
