@@ -6,7 +6,7 @@
 /*   By: frafal <frafal@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/01/19 11:13:11 by frafal            #+#    #+#             */
-/*   Updated: 2023/01/20 11:44:14 by frafal           ###   ########.fr       */
+/*   Updated: 2023/01/20 15:48:34 by frafal           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,6 +41,11 @@ typedef struct s_philo
 	int				state;
 	struct s_philo	*right;
 }	t_philo;
+
+typedef struct s_fork
+{
+	pthread_mutex_t	fork_mutex;
+}	t_fork;
 
 int	ft_atoi(const char *nptr);
 
