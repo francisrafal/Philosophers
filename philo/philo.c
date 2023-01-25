@@ -6,7 +6,7 @@
 /*   By: frafal <frafal@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/01/19 11:12:03 by frafal            #+#    #+#             */
-/*   Updated: 2023/01/25 17:21:03 by frafal           ###   ########.fr       */
+/*   Updated: 2023/01/25 17:27:10 by frafal           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -209,6 +209,7 @@ void	*check_deaths(void *ptr)
 			pthread_mutex_lock(&(data->alive_mutex));
 			data->all_alive = 0;
 			pthread_mutex_unlock(&(data->alive_mutex));
+			pthread_mutex_unlock(&(data->last_eaten_mutex));
 			break ;
 		}
 		pthread_mutex_unlock(&(data->last_eaten_mutex));
@@ -247,7 +248,4 @@ int	main(int argc, char **argv)
 // Check Data Races
 // Check if arguments are positive
 // Norminette
-// print mutex
-// alive mutex
-// Repair destroy locked mutex
 // Repair default repository for sync changes in gitlens
