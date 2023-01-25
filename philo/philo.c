@@ -6,7 +6,7 @@
 /*   By: frafal <frafal@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/01/19 11:12:03 by frafal            #+#    #+#             */
-/*   Updated: 2023/01/25 17:17:28 by frafal           ###   ########.fr       */
+/*   Updated: 2023/01/25 17:21:03 by frafal           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -249,3 +249,5 @@ int	main(int argc, char **argv)
 // Norminette
 // print mutex
 // alive mutex
+// Repair destroy locked mutex
+// Repair default repository for sync changes in gitlens
