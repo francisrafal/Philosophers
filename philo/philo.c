@@ -6,7 +6,7 @@
 /*   By: frafal <frafal@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/01/19 11:12:03 by frafal            #+#    #+#             */
-/*   Updated: 2023/01/25 11:16:25 by frafal           ###   ########.fr       */
+/*   Updated: 2023/01/25 13:42:32 by frafal           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,7 +26,7 @@ time_to_sleep \
 	return (1);
 }
 
-int	init_forks(t_data *data)
+int	init_fork_mutex(t_data *data)
 {
 	int	i;
 
@@ -38,7 +38,14 @@ int	init_forks(t_data *data)
 	}
 	i = 0;
 	while (i < data->num)
-		pthread_mutex_init(data->fork + i++, NULL);
+		pthread_mutex_init(data->forks + i++, NULL);
+	return (0);
+}
+
+int	init_fork_availability(t_data *data)
+{
+	int	i;
+
 	data->fork_availability = malloc(data->num * sizeof (int));
 	if (data->fork_availability == NULL)
 	{
@@ -67,8 +74,11 @@ t_data	*init_data(int argc, char **argv)
 	data->tts = ft_atoi(argv[4]);
 	if (argc == 6)
 		data->eat_times = ft_atoi(argv[5]);
-	if (init_forks(data) == -1)
+	if (init_fork_mutex(data) == -1)
 		return (NULL);
+	if (init_fork_availability(data) == -1)
+		return (NULL);
+	pthread_mutex_init(&(data->waiter), NULL);
 	return (data);
 }
 
@@ -101,6 +111,15 @@ void	perror_exit(char *err)
 	exit(EXIT_FAILURE);
 }
 
+void	free_null(void *ptr)
+{
+	if (ptr)
+	{
+		free(ptr);
+		ptr = NULL;
+	}
+}
+
 void	free_str_arr(char **str_arr)
 {
 	int	i;
@@ -114,16 +133,7 @@ void	free_str_arr(char **str_arr)
 	free_null(str_arr);
 }
 
-void	free_null(void *ptr)
-{
-	if (ptr)
-	{
-		free(ptr);
-		ptr = NULL;
-	}
-}
-
-void	free_forks(t_data *data)
+void	free_fork_mutex(t_data *data)
 {
 	int	i;
 
@@ -136,16 +146,17 @@ void	free_forks(t_data *data)
 void	free_data(t_data *data)
 {
 	free_null(data->fork_availability);
-	free_forks(data);
+	free_fork_mutex(data);
+	pthread_mutex_destroy(&(data->waiter));
 	free_null(data);
 }
 
-void	print_error_exit(char *errmsg, t_data *data)
+/* void	print_error_exit(char *errmsg, t_data *data)
 {
 	ft_putstr_fd(errmsg, 2);
 	free_data(data);
 	exit(EXIT_FAILURE);
-}
+} */
 
 int	main(int argc, char **argv)
 {
