@@ -6,7 +6,7 @@
 /*   By: frafal <frafal@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/01/19 11:13:11 by frafal            #+#    #+#             */
-/*   Updated: 2023/01/25 13:42:03 by frafal           ###   ########.fr       */
+/*   Updated: 2023/01/25 15:25:33 by frafal           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,6 +33,7 @@ typedef struct s_data
 	int				eat_times;
 	struct timeval	tv0;
 	struct timeval	tv1;
+	struct timeval	*last_eaten;
 	pthread_t		tid1;
 	pthread_t		tid2;
 	pthread_mutex_t	waiter;

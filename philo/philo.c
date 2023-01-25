@@ -6,7 +6,7 @@
 /*   By: frafal <frafal@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/01/19 11:12:03 by frafal            #+#    #+#             */
-/*   Updated: 2023/01/25 14:40:32 by frafal           ###   ########.fr       */
+/*   Updated: 2023/01/25 16:03:04 by frafal           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -58,6 +58,17 @@ int	init_fork_availability(t_data *data)
 	return (0);
 }
 
+int	init_last_eaten(t_data *data)
+{
+	data->last_eaten = malloc(data->num * sizeof (struct timeval));
+	if (data->last_eaten == NULL)
+	{
+		printf("malloc fail\n");
+		return (-1);
+	}
+	return (0);
+}
+
 t_data	*init_data(int argc, char **argv)
 {
 	t_data	*data;
@@ -79,20 +90,20 @@ t_data	*init_data(int argc, char **argv)
 	if (init_fork_availability(data) == -1)
 		return (NULL);
 	pthread_mutex_init(&(data->waiter), NULL);
+	if (init_last_eaten(data) == -1)
+		return (NULL);
 	return (data);
+}
+
+long	time_diff_in_ms(struct timeval a, struct timeval b)
+{
+	return ((a.tv_sec - b.tv_sec) * 1000 + (a.tv_usec - b.tv_usec) / 1000);
 }
 
 long	get_timestamp_in_ms(t_data *data)
 {
-	long	sec_elapsed;
-	long	usec_elapsed;
-	long	msec_elapsed;
-
 	gettimeofday(&(data->tv1), NULL);
-	sec_elapsed = data->tv1.tv_sec - data->tv0.tv_sec;
-	usec_elapsed = data->tv1.tv_usec - data->tv0.tv_usec;
-	msec_elapsed = sec_elapsed * 1000 + usec_elapsed / 1000;
-	return (msec_elapsed);
+	return (time_diff_in_ms(data->tv1, data->tv0));
 }
 
 void	*philosopher_thread(void *ptr)
@@ -100,26 +111,31 @@ void	*philosopher_thread(void *ptr)
 	t_data	*data;
 
 	data = (t_data *)ptr;
-	pthread_mutex_lock(&(data->waiter));
-	if (data->fork_availability[0] == FORK_FREE && data->fork_availability[1] == FORK_FREE)
+	data->last_eaten[0] = data->tv0;
+	while (1)
 	{
-		data->fork_availability[0] = FORK_USED;
-		data->fork_availability[1] = FORK_USED;
-		pthread_mutex_lock(data->forks + 0);
-		printf("%ld 0 has taken a fork\n", get_timestamp_in_ms(data));
-		pthread_mutex_lock(data->forks + 1);
-		printf("%ld 0 has taken a fork\n", get_timestamp_in_ms(data));
-		printf("%ld 0 is eating\n", get_timestamp_in_ms(data));
-		usleep(data->tte * 1000);
-		pthread_mutex_unlock(data->forks + 0);
-		pthread_mutex_unlock(data->forks + 1);
-		data->fork_availability[0] = FORK_FREE;
-		data->fork_availability[1] = FORK_FREE;
-		printf("%ld 0 is sleeping\n", get_timestamp_in_ms(data));
-		usleep(data->tts * 1000);
-		printf("%ld 0 is thinking\n", get_timestamp_in_ms(data));
+		pthread_mutex_lock(&(data->waiter));
+		if (data->fork_availability[0] == FORK_FREE && data->fork_availability[1] == FORK_FREE)
+		{
+			data->fork_availability[0] = FORK_USED;
+			data->fork_availability[1] = FORK_USED;
+			pthread_mutex_lock(data->forks + 0);
+			printf("%ld 0 has taken a fork\n", get_timestamp_in_ms(data));
+			pthread_mutex_lock(data->forks + 1);
+			printf("%ld 0 has taken a fork\n", get_timestamp_in_ms(data));
+			printf("%ld 0 is eating\n", get_timestamp_in_ms(data));
+			usleep(data->tte * 1000);
+			pthread_mutex_unlock(data->forks + 0);
+			pthread_mutex_unlock(data->forks + 1);
+			data->fork_availability[0] = FORK_FREE;
+			data->fork_availability[1] = FORK_FREE;
+			// gettimeofday(data->last_eaten + 0, NULL);
+			printf("%ld 0 is sleeping\n", get_timestamp_in_ms(data));
+			usleep(data->tts * 1000);
+			printf("%ld 0 is thinking\n", get_timestamp_in_ms(data));
+		}
+		pthread_mutex_unlock(&(data->waiter));
 	}
-	pthread_mutex_unlock(&(data->waiter));
 	return (NULL);
 }
 
@@ -147,6 +163,7 @@ void	free_data(t_data *data)
 	free_null(data->fork_availability);
 	free_fork_mutex(data);
 	pthread_mutex_destroy(&(data->waiter));
+	free_null(data->last_eaten);
 	free_null(data);
 }
 
@@ -156,6 +173,16 @@ void	free_data(t_data *data)
 	free_data(data);
 	exit(EXIT_FAILURE);
 } */
+
+void	init_philosophers(t_data *data)
+{
+	pthread_create(&(data->tid1), NULL, philosopher_thread, data);
+}
+
+void	join_philosophers(t_data *data)
+{
+	pthread_join(data->tid1, NULL);
+}
 
 int	main(int argc, char **argv)
 {
@@ -167,8 +194,8 @@ int	main(int argc, char **argv)
 	if (data == NULL)
 		return (1);
 	gettimeofday(&(data->tv0), NULL);
-	pthread_create(&(data->tid1), NULL, philosopher_thread, data);
-	pthread_join(data->tid1, NULL);
+	init_philosophers(data);
+	join_philosophers(data);
 	free_data(data);
 	return (0);
 }
