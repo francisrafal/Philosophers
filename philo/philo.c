@@ -6,7 +6,7 @@
 /*   By: frafal <frafal@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/01/19 11:12:03 by frafal            #+#    #+#             */
-/*   Updated: 2023/01/25 13:42:32 by frafal           ###   ########.fr       */
+/*   Updated: 2023/01/25 14:40:32 by frafal           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -82,11 +82,11 @@ t_data	*init_data(int argc, char **argv)
 	return (data);
 }
 
-unsigned long	get_timestamp_in_ms(t_data *data)
+long	get_timestamp_in_ms(t_data *data)
 {
-	unsigned long	sec_elapsed;
-	unsigned long	usec_elapsed;
-	unsigned long	msec_elapsed;
+	long	sec_elapsed;
+	long	usec_elapsed;
+	long	msec_elapsed;
 
 	gettimeofday(&(data->tv1), NULL);
 	sec_elapsed = data->tv1.tv_sec - data->tv0.tv_sec;
@@ -95,20 +95,32 @@ unsigned long	get_timestamp_in_ms(t_data *data)
 	return (msec_elapsed);
 }
 
-void	*thread_routine(void *ptr)
+void	*philosopher_thread(void *ptr)
 {
-	pthread_t	tid;
+	t_data	*data;
 
-	(void)ptr;
-	tid = pthread_self();
-	printf("Thread: %ld\n", tid);
+	data = (t_data *)ptr;
+	pthread_mutex_lock(&(data->waiter));
+	if (data->fork_availability[0] == FORK_FREE && data->fork_availability[1] == FORK_FREE)
+	{
+		data->fork_availability[0] = FORK_USED;
+		data->fork_availability[1] = FORK_USED;
+		pthread_mutex_lock(data->forks + 0);
+		printf("%ld 0 has taken a fork\n", get_timestamp_in_ms(data));
+		pthread_mutex_lock(data->forks + 1);
+		printf("%ld 0 has taken a fork\n", get_timestamp_in_ms(data));
+		printf("%ld 0 is eating\n", get_timestamp_in_ms(data));
+		usleep(data->tte * 1000);
+		pthread_mutex_unlock(data->forks + 0);
+		pthread_mutex_unlock(data->forks + 1);
+		data->fork_availability[0] = FORK_FREE;
+		data->fork_availability[1] = FORK_FREE;
+		printf("%ld 0 is sleeping\n", get_timestamp_in_ms(data));
+		usleep(data->tts * 1000);
+		printf("%ld 0 is thinking\n", get_timestamp_in_ms(data));
+	}
+	pthread_mutex_unlock(&(data->waiter));
 	return (NULL);
-}
-
-void	perror_exit(char *err)
-{
-	perror(err);
-	exit(EXIT_FAILURE);
 }
 
 void	free_null(void *ptr)
@@ -118,19 +130,6 @@ void	free_null(void *ptr)
 		free(ptr);
 		ptr = NULL;
 	}
-}
-
-void	free_str_arr(char **str_arr)
-{
-	int	i;
-
-	i = 0;
-	while (str_arr[i] != NULL)
-	{
-		free_null(str_arr[i]);
-		i++;
-	}
-	free_null(str_arr);
 }
 
 void	free_fork_mutex(t_data *data)
@@ -168,14 +167,8 @@ int	main(int argc, char **argv)
 	if (data == NULL)
 		return (1);
 	gettimeofday(&(data->tv0), NULL);
-	pthread_create(&(data->tid1), NULL, thread_routine, NULL);
-	printf("Main: Created first thread %ld\n", data->tid1);
-	pthread_create(&(data->tid2), NULL, thread_routine, NULL);
-	printf("Main: Created second thread %ld\n", data->tid2);
+	pthread_create(&(data->tid1), NULL, philosopher_thread, data);
 	pthread_join(data->tid1, NULL);
-	printf("Main: Joining first thread %ld\n", data->tid1);
-	pthread_join(data->tid2, NULL);
-	printf("Main: Joining second thread %ld\n", data->tid2);
 	free_data(data);
 	return (0);
 }
@@ -183,3 +176,7 @@ int	main(int argc, char **argv)
 // Protect all system calls and perror exit
 // Protect all mallocs
 // Free Data at the end of main
+// Check memory Leaks
+// Check Data Races
+// Check if arguments are positive
+// Norminette
