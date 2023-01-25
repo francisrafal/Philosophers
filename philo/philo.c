@@ -6,7 +6,7 @@
 /*   By: frafal <frafal@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/01/19 11:12:03 by frafal            #+#    #+#             */
-/*   Updated: 2023/01/25 16:03:04 by frafal           ###   ########.fr       */
+/*   Updated: 2023/01/25 16:53:45 by frafal           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -83,6 +83,7 @@ t_data	*init_data(int argc, char **argv)
 	data->ttd = ft_atoi(argv[2]);
 	data->tte = ft_atoi(argv[3]);
 	data->tts = ft_atoi(argv[4]);
+	data->all_alive = 1;
 	if (argc == 6)
 		data->eat_times = ft_atoi(argv[5]);
 	if (init_fork_mutex(data) == -1)
@@ -90,6 +91,8 @@ t_data	*init_data(int argc, char **argv)
 	if (init_fork_availability(data) == -1)
 		return (NULL);
 	pthread_mutex_init(&(data->waiter), NULL);
+	pthread_mutex_init(&(data->alive_mutex), NULL);
+	pthread_mutex_init(&(data->print_mutex), NULL);
 	if (init_last_eaten(data) == -1)
 		return (NULL);
 	return (data);
@@ -112,7 +115,7 @@ void	*philosopher_thread(void *ptr)
 
 	data = (t_data *)ptr;
 	data->last_eaten[0] = data->tv0;
-	while (1)
+	while (data->all_alive)
 	{
 		pthread_mutex_lock(&(data->waiter));
 		if (data->fork_availability[0] == FORK_FREE && data->fork_availability[1] == FORK_FREE)
@@ -129,12 +132,12 @@ void	*philosopher_thread(void *ptr)
 			pthread_mutex_unlock(data->forks + 1);
 			data->fork_availability[0] = FORK_FREE;
 			data->fork_availability[1] = FORK_FREE;
-			// gettimeofday(data->last_eaten + 0, NULL);
+			pthread_mutex_unlock(&(data->waiter));
+			gettimeofday(data->last_eaten + 0, NULL);
 			printf("%ld 0 is sleeping\n", get_timestamp_in_ms(data));
 			usleep(data->tts * 1000);
 			printf("%ld 0 is thinking\n", get_timestamp_in_ms(data));
 		}
-		pthread_mutex_unlock(&(data->waiter));
 	}
 	return (NULL);
 }
@@ -163,6 +166,8 @@ void	free_data(t_data *data)
 	free_null(data->fork_availability);
 	free_fork_mutex(data);
 	pthread_mutex_destroy(&(data->waiter));
+	pthread_mutex_destroy(&(data->print_mutex));
+	pthread_mutex_destroy(&(data->alive_mutex));
 	free_null(data->last_eaten);
 	free_null(data);
 }
@@ -179,9 +184,29 @@ void	init_philosophers(t_data *data)
 	pthread_create(&(data->tid1), NULL, philosopher_thread, data);
 }
 
-void	join_philosophers(t_data *data)
+void	*check_deaths(void *ptr)
+{
+	t_data	*data;
+
+	data = (t_data *)ptr;
+	while (1)
+	{
+		gettimeofday(&(data->tv1), NULL);
+		if (time_diff_in_ms(data->tv1, data->last_eaten[0]) > data->ttd)
+		{
+			printf("%ld 0 died\n", get_timestamp_in_ms(data));
+			data->all_alive = 0;
+			break ;
+		}
+		usleep(5000);
+	}
+	return (NULL);
+}
+
+void	join_all_threads(t_data *data)
 {
 	pthread_join(data->tid1, NULL);
+	pthread_join(data->death_thread, NULL);
 }
 
 int	main(int argc, char **argv)
@@ -195,7 +220,9 @@ int	main(int argc, char **argv)
 		return (1);
 	gettimeofday(&(data->tv0), NULL);
 	init_philosophers(data);
-	join_philosophers(data);
+	pthread_create(&(data->death_thread), NULL, check_deaths, data);
+	check_deaths(data);
+	join_all_threads(data);
 	free_data(data);
 	return (0);
 }
@@ -207,3 +234,5 @@ int	main(int argc, char **argv)
 // Check Data Races
 // Check if arguments are positive
 // Norminette
+// print mutex
+// alive mutex

@@ -6,7 +6,7 @@
 /*   By: frafal <frafal@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/01/19 11:13:11 by frafal            #+#    #+#             */
-/*   Updated: 2023/01/25 15:25:33 by frafal           ###   ########.fr       */
+/*   Updated: 2023/01/25 16:52:36 by frafal           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,9 +36,13 @@ typedef struct s_data
 	struct timeval	*last_eaten;
 	pthread_t		tid1;
 	pthread_t		tid2;
+	pthread_t		death_thread;
 	pthread_mutex_t	waiter;
 	pthread_mutex_t	*forks;
+	pthread_mutex_t	print_mutex;
+	pthread_mutex_t	alive_mutex;
 	int				*fork_availability;
+	int				all_alive;
 }	t_data;
 
 typedef struct s_philo
