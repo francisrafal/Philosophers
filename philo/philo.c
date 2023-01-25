@@ -6,7 +6,7 @@
 /*   By: frafal <frafal@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/01/19 11:12:03 by frafal            #+#    #+#             */
-/*   Updated: 2023/01/20 14:10:03 by frafal           ###   ########.fr       */
+/*   Updated: 2023/01/25 11:16:25 by frafal           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,6 +26,31 @@ time_to_sleep \
 	return (1);
 }
 
+int	init_forks(t_data *data)
+{
+	int	i;
+
+	data->forks = malloc(data->num * sizeof (pthread_mutex_t));
+	if (data->forks == NULL)
+	{
+		printf("malloc fail\n");
+		return (-1);
+	}
+	i = 0;
+	while (i < data->num)
+		pthread_mutex_init(data->fork + i++, NULL);
+	data->fork_availability = malloc(data->num * sizeof (int));
+	if (data->fork_availability == NULL)
+	{
+		printf("malloc fail\n");
+		return (-1);
+	}
+	i = 0;
+	while (i < data->num)
+		data->fork_availability[i++] = FORK_FREE;
+	return (0);
+}
+
 t_data	*init_data(int argc, char **argv)
 {
 	t_data	*data;
@@ -42,6 +67,8 @@ t_data	*init_data(int argc, char **argv)
 	data->tts = ft_atoi(argv[4]);
 	if (argc == 6)
 		data->eat_times = ft_atoi(argv[5]);
+	if (init_forks(data) == -1)
+		return (NULL);
 	return (data);
 }
 
@@ -68,6 +95,58 @@ void	*thread_routine(void *ptr)
 	return (NULL);
 }
 
+void	perror_exit(char *err)
+{
+	perror(err);
+	exit(EXIT_FAILURE);
+}
+
+void	free_str_arr(char **str_arr)
+{
+	int	i;
+
+	i = 0;
+	while (str_arr[i] != NULL)
+	{
+		free_null(str_arr[i]);
+		i++;
+	}
+	free_null(str_arr);
+}
+
+void	free_null(void *ptr)
+{
+	if (ptr)
+	{
+		free(ptr);
+		ptr = NULL;
+	}
+}
+
+void	free_forks(t_data *data)
+{
+	int	i;
+
+	i = 0;
+	while (i < data->num)
+		pthread_mutex_destroy(data->forks + i++);
+	free_null(data->forks);
+}
+
+void	free_data(t_data *data)
+{
+	free_null(data->fork_availability);
+	free_forks(data);
+	free_null(data);
+}
+
+void	print_error_exit(char *errmsg, t_data *data)
+{
+	ft_putstr_fd(errmsg, 2);
+	free_data(data);
+	exit(EXIT_FAILURE);
+}
+
 int	main(int argc, char **argv)
 {
 	t_data	*data;
@@ -86,5 +165,10 @@ int	main(int argc, char **argv)
 	printf("Main: Joining first thread %ld\n", data->tid1);
 	pthread_join(data->tid2, NULL);
 	printf("Main: Joining second thread %ld\n", data->tid2);
+	free_data(data);
 	return (0);
 }
+
+// Protect all system calls and perror exit
+// Protect all mallocs
+// Free Data at the end of main
