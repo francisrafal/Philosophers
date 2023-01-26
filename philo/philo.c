@@ -6,7 +6,7 @@
 /*   By: frafal <frafal@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/01/19 11:12:03 by frafal            #+#    #+#             */
-/*   Updated: 2023/01/26 16:42:22 by frafal           ###   ########.fr       */
+/*   Updated: 2023/01/26 16:48:07 by frafal           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -278,7 +278,7 @@ void	*check_deaths(void *ptr)
 			pthread_mutex_lock(&(data->last_eaten_mutex));
 			if (time_diff_in_ms(data->tv1, data->last_eaten[id]) > data->ttd)
 			{
-				printf("time_diff_in_ms %ld, id %d \n", time_diff_in_ms(data->tv1, data->last_eaten[id]), id);
+				//printf("time_diff_in_ms %ld, id %d \n", time_diff_in_ms(data->tv1, data->last_eaten[id]), id);
 				printf("%ld %d died\n", get_timestamp_in_ms(data), id);
 				pthread_mutex_lock(&(data->alive_mutex));
 				data->all_alive = 0;
@@ -349,3 +349,4 @@ int	main(int argc, char **argv)
 // print mutex
 
 // waiter should prioritize threads that haven't eaten in a long time (smalles last eaten time)
+// philosophers don't die when they pass time to die????
