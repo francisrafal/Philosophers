@@ -6,7 +6,7 @@
 /*   By: frafal <frafal@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/01/19 11:12:03 by frafal            #+#    #+#             */
-/*   Updated: 2023/01/26 14:32:01 by frafal           ###   ########.fr       */
+/*   Updated: 2023/01/26 16:42:22 by frafal           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -129,6 +129,20 @@ long	get_timestamp_in_ms(t_data *data)
 	return (time_diff_in_ms(data->tv1, data->tv0));
 }
 
+int	max(int	a, int b)
+{
+	if (a > b)
+		return (a);
+	return (b);
+}
+
+int	min(int a, int b)
+{
+	if (a < b)
+		return (a);
+	return (b);
+}
+
 void	*philosopher_thread(void *ptr)
 {
 	t_philo	*philo;
@@ -159,17 +173,17 @@ void	*philosopher_thread(void *ptr)
 		{
 			data->fork_availability[left] = FORK_USED;
 			data->fork_availability[right] = FORK_USED;
-			pthread_mutex_lock(data->forks + left);
+			pthread_mutex_lock(data->forks + min(left, right));
 			printf("%ld %d has taken a fork\n", get_timestamp_in_ms(data), id);
-			pthread_mutex_lock(data->forks + right);
+			pthread_mutex_lock(data->forks + max(left, right));
 			printf("%ld %d has taken a fork\n", get_timestamp_in_ms(data), id);
 			printf("%ld %d is eating\n", get_timestamp_in_ms(data), id);
 			pthread_mutex_lock(&(data->last_eaten_mutex));
 			gettimeofday(data->last_eaten + id, NULL);
 			pthread_mutex_unlock(&(data->last_eaten_mutex));
 			usleep(data->tte * 1000);
-			pthread_mutex_unlock(data->forks + left);
-			pthread_mutex_unlock(data->forks + right);
+			pthread_mutex_unlock(data->forks + max(left, right));
+			pthread_mutex_unlock(data->forks + min(left, right));
 			data->fork_availability[left] = FORK_FREE;
 			data->fork_availability[right] = FORK_FREE;
 			pthread_mutex_unlock(&(data->waiter));
@@ -259,11 +273,12 @@ void	*check_deaths(void *ptr)
 		pthread_mutex_unlock(&(data->alive_mutex));
 		while (id <= data->num)
 		{
+			// maybe mutex gettimeofday?
 			gettimeofday(&(data->tv1), NULL);
 			pthread_mutex_lock(&(data->last_eaten_mutex));
-			// Check first if philosopher thread has already started. could be that last eaten is not even initialized
 			if (time_diff_in_ms(data->tv1, data->last_eaten[id]) > data->ttd)
 			{
+				printf("time_diff_in_ms %ld, id %d \n", time_diff_in_ms(data->tv1, data->last_eaten[id]), id);
 				printf("%ld %d died\n", get_timestamp_in_ms(data), id);
 				pthread_mutex_lock(&(data->alive_mutex));
 				data->all_alive = 0;
@@ -293,12 +308,12 @@ void	join_all_threads(t_data *data)
 
 void	set_last_eaten(t_data *data)
 {
-	int	i;
+	int	id;
 
-	i = 0;
+	id = 0;
 	pthread_mutex_lock(&(data->last_eaten_mutex));
-	while (i < data->num)
-		data->last_eaten[i++] = data->tv0;
+	while (id <= data->num)
+		data->last_eaten[id++] = data->tv0;
 	pthread_mutex_unlock(&(data->last_eaten_mutex));
 }
 
@@ -332,3 +347,5 @@ int	main(int argc, char **argv)
 // Update philosopher thread to use the correct forks
 // Wrap alive checks with printf functions
 // print mutex
+
+// waiter should prioritize threads that haven't eaten in a long time (smalles last eaten time)
