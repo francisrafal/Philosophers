@@ -6,7 +6,7 @@
 /*   By: frafal <frafal@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/01/19 11:12:03 by frafal            #+#    #+#             */
-/*   Updated: 2023/01/26 13:04:38 by frafal           ###   ########.fr       */
+/*   Updated: 2023/01/26 14:17:43 by frafal           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -60,8 +60,25 @@ int	init_fork_availability(t_data *data)
 
 int	init_last_eaten(t_data *data)
 {
-	data->last_eaten = malloc(data->num * sizeof (struct timeval));
+	data->last_eaten = malloc((data->num + 1)* sizeof (struct timeval));
 	if (data->last_eaten == NULL)
+	{
+		printf("malloc fail\n");
+		return (-1);
+	}
+	return (0);
+}
+
+int	init_philosophers(t_data *data)
+{
+	data->philos = malloc(data->num * sizeof (t_philo));
+	if (data->philos == NULL)
+	{
+		printf("malloc fail\n");
+		return (-1);
+	}
+	data->philosophers = malloc(data->num * sizeof (pthread_t));
+	if (data->philosophers == NULL)
 	{
 		printf("malloc fail\n");
 		return (-1);
@@ -90,6 +107,8 @@ t_data	*init_data(int argc, char **argv)
 		return (NULL);
 	if (init_fork_availability(data) == -1)
 		return (NULL);
+	if (init_philosophers(data) == -1)
+		return (NULL);
 	pthread_mutex_init(&(data->waiter), NULL);
 	pthread_mutex_init(&(data->alive_mutex), NULL);
 	pthread_mutex_init(&(data->print_mutex), NULL);
@@ -112,18 +131,26 @@ long	get_timestamp_in_ms(t_data *data)
 
 void	*philosopher_thread(void *ptr)
 {
+	t_philo	*philo;
 	t_data	*data;
+	int		id;
+	int		left;
+	int		right;
 
-	data = (t_data *)ptr;
+	philo = (t_philo *)ptr;
+	data = philo->data;
+	id = philo->id;
+	left = philo->left;
+	right = philo->right;
+	//printf("%d started\n", id);
 	pthread_mutex_lock(&(data->last_eaten_mutex));
-	data->last_eaten[0] = data->tv0;
+	data->last_eaten[left] = data->tv0;
 	pthread_mutex_unlock(&(data->last_eaten_mutex));
 	pthread_mutex_lock(&(data->alive_mutex));
 	while (data->all_alive)
 	{
 		pthread_mutex_unlock(&(data->alive_mutex));
 		pthread_mutex_lock(&(data->waiter));
-		usleep(800000);
 		pthread_mutex_lock(&(data->alive_mutex));
 		if (!data->all_alive)
 		{
@@ -131,35 +158,35 @@ void	*philosopher_thread(void *ptr)
 			break ;
 		}
 		pthread_mutex_unlock(&(data->alive_mutex));
-		if (data->fork_availability[0] == FORK_FREE && data->fork_availability[1] == FORK_FREE)
+		if (data->fork_availability[left] == FORK_FREE && data->fork_availability[right] == FORK_FREE)
 		{
-			data->fork_availability[0] = FORK_USED;
-			data->fork_availability[1] = FORK_USED;
-			pthread_mutex_lock(data->forks + 0);
-			printf("%ld 0 has taken a fork\n", get_timestamp_in_ms(data));
-			pthread_mutex_lock(data->forks + 1);
-			printf("%ld 0 has taken a fork\n", get_timestamp_in_ms(data));
-			printf("%ld 0 is eating\n", get_timestamp_in_ms(data));
+			data->fork_availability[left] = FORK_USED;
+			data->fork_availability[right] = FORK_USED;
+			pthread_mutex_lock(data->forks + left);
+			printf("%ld %d has taken a fork\n", get_timestamp_in_ms(data), id);
+			pthread_mutex_lock(data->forks + right);
+			printf("%ld %d has taken a fork\n", get_timestamp_in_ms(data), id);
+			printf("%ld %d is eating\n", get_timestamp_in_ms(data), id);
 			pthread_mutex_lock(&(data->last_eaten_mutex));
-			gettimeofday(data->last_eaten + 0, NULL);
+			gettimeofday(data->last_eaten + id, NULL);
 			pthread_mutex_unlock(&(data->last_eaten_mutex));
 			usleep(data->tte * 1000);
-			pthread_mutex_unlock(data->forks + 0);
-			pthread_mutex_unlock(data->forks + 1);
-			data->fork_availability[0] = FORK_FREE;
-			data->fork_availability[1] = FORK_FREE;
+			pthread_mutex_unlock(data->forks + left);
+			pthread_mutex_unlock(data->forks + right);
+			data->fork_availability[left] = FORK_FREE;
+			data->fork_availability[right] = FORK_FREE;
 			pthread_mutex_unlock(&(data->waiter));
 			pthread_mutex_lock(&(data->alive_mutex));
 			if (!data->all_alive)
 				break ;
 			pthread_mutex_unlock(&(data->alive_mutex));
-			printf("%ld 0 is sleeping\n", get_timestamp_in_ms(data));
+			printf("%ld %d is sleeping\n", get_timestamp_in_ms(data), id);
 			usleep(data->tts * 1000);
 			pthread_mutex_lock(&(data->alive_mutex));
 			if (!data->all_alive)
 				break ;
 			pthread_mutex_unlock(&(data->alive_mutex));
-			printf("%ld 0 is thinking\n", get_timestamp_in_ms(data));
+			printf("%ld %d is thinking\n", get_timestamp_in_ms(data), id);
 		}
 		pthread_mutex_lock(&(data->alive_mutex));
 	}
@@ -189,6 +216,7 @@ void	free_fork_mutex(t_data *data)
 void	free_data(t_data *data)
 {
 	free_null(data->fork_availability);
+	free_null(data->philosophers);
 	free_fork_mutex(data);
 	pthread_mutex_destroy(&(data->waiter));
 	pthread_mutex_destroy(&(data->print_mutex));
@@ -205,38 +233,63 @@ void	free_data(t_data *data)
 	exit(EXIT_FAILURE);
 } */
 
-void	init_philosophers(t_data *data)
+void	start_philosophers(t_data *data)
 {
-	pthread_create(&(data->tid1), NULL, philosopher_thread, data);
+	int	i;
+
+	i = 0;
+	while (i < data->num)
+	{
+		data->philos[i].left = i;
+		data->philos[i].right = (i + 1) % data->num;
+		data->philos[i].id = i + 1;
+		data->philos[i].data = data;
+		pthread_create(&(data->philosophers[i]), NULL, philosopher_thread, data->philos + i);
+		i++;
+	}
 }
 
 void	*check_deaths(void *ptr)
 {
 	t_data	*data;
+	int		id;
 
 	data = (t_data *)ptr;
-	while (1)
+	id = 1;
+	pthread_mutex_lock(&(data->alive_mutex));
+	while (data->all_alive)
 	{
-		gettimeofday(&(data->tv1), NULL);
-		pthread_mutex_lock(&(data->last_eaten_mutex));
-		if (time_diff_in_ms(data->tv1, data->last_eaten[0]) > data->ttd)
+		pthread_mutex_unlock(&(data->alive_mutex));
+		while (id <= data->num)
 		{
-			printf("%ld 0 died\n", get_timestamp_in_ms(data));
-			pthread_mutex_lock(&(data->alive_mutex));
-			data->all_alive = 0;
-			pthread_mutex_unlock(&(data->alive_mutex));
+			gettimeofday(&(data->tv1), NULL);
+			pthread_mutex_lock(&(data->last_eaten_mutex));
+			if (time_diff_in_ms(data->tv1, data->last_eaten[id]) > data->ttd)
+			{
+				printf("%ld %d died\n", get_timestamp_in_ms(data), id);
+				pthread_mutex_lock(&(data->alive_mutex));
+				data->all_alive = 0;
+				pthread_mutex_unlock(&(data->alive_mutex));
+				pthread_mutex_unlock(&(data->last_eaten_mutex));
+				break ;
+			}
 			pthread_mutex_unlock(&(data->last_eaten_mutex));
-			break ;
+			id++;
+			usleep(1000);
 		}
-		pthread_mutex_unlock(&(data->last_eaten_mutex));
-		usleep(5000);
+		pthread_mutex_lock(&(data->alive_mutex));
 	}
+	pthread_mutex_unlock(&(data->alive_mutex));
 	return (NULL);
 }
 
 void	join_all_threads(t_data *data)
 {
-	pthread_join(data->tid1, NULL);
+	int	i;
+
+	i = 0;
+	while (i < data->num)
+		pthread_join(data->philosophers[i++], NULL);
 	pthread_join(data->death_thread, NULL);
 }
 
@@ -250,7 +303,7 @@ int	main(int argc, char **argv)
 	if (data == NULL)
 		return (1);
 	gettimeofday(&(data->tv0), NULL);
-	init_philosophers(data);
+	start_philosophers(data);
 	pthread_create(&(data->death_thread), NULL, check_deaths, data);
 	join_all_threads(data);
 	free_data(data);
@@ -265,3 +318,7 @@ int	main(int argc, char **argv)
 // Check if arguments are positive
 // Norminette
 // Repair default repository for sync changes in gitlens
+// Handle special cases like just one philosopher
+// Update philosopher thread to use the correct forks
+// Wrap alive checks with printf functions
+// print mutex

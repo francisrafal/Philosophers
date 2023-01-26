@@ -6,7 +6,7 @@
 /*   By: frafal <frafal@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/01/19 11:13:11 by frafal            #+#    #+#             */
-/*   Updated: 2023/01/26 11:19:51 by frafal           ###   ########.fr       */
+/*   Updated: 2023/01/26 13:50:17 by frafal           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,12 +17,22 @@
 # include <unistd.h>
 # include <stdio.h>
 # include <sys/time.h>
+/*
 # define EATING 1
 # define SLEEPING 2
 # define THINKING 3
 # define DEAD 0
+*/
 # define FORK_USED 0
 # define FORK_FREE 1
+
+typedef struct s_philo
+{
+	int				id;
+	int				left;
+	int				right;
+	struct s_data	*data;
+}	t_philo;
 
 typedef struct s_data
 {
@@ -34,8 +44,7 @@ typedef struct s_data
 	struct timeval	tv0;
 	struct timeval	tv1;
 	struct timeval	*last_eaten;
-	pthread_t		tid1;
-	pthread_t		tid2;
+	pthread_t		*philosophers;
 	pthread_t		death_thread;
 	pthread_mutex_t	waiter;
 	pthread_mutex_t	*forks;
@@ -44,14 +53,8 @@ typedef struct s_data
 	pthread_mutex_t	last_eaten_mutex;
 	int				*fork_availability;
 	int				all_alive;
+	t_philo			*philos;
 }	t_data;
-
-typedef struct s_philo
-{
-	int				num;
-	int				state;
-	struct s_philo	*right;
-}	t_philo;
 
 typedef struct s_fork
 {
