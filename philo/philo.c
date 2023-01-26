@@ -6,7 +6,7 @@
 /*   By: frafal <frafal@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/01/19 11:12:03 by frafal            #+#    #+#             */
-/*   Updated: 2023/01/26 14:17:43 by frafal           ###   ########.fr       */
+/*   Updated: 2023/01/26 14:32:01 by frafal           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -143,9 +143,6 @@ void	*philosopher_thread(void *ptr)
 	left = philo->left;
 	right = philo->right;
 	//printf("%d started\n", id);
-	pthread_mutex_lock(&(data->last_eaten_mutex));
-	data->last_eaten[left] = data->tv0;
-	pthread_mutex_unlock(&(data->last_eaten_mutex));
 	pthread_mutex_lock(&(data->alive_mutex));
 	while (data->all_alive)
 	{
@@ -264,6 +261,7 @@ void	*check_deaths(void *ptr)
 		{
 			gettimeofday(&(data->tv1), NULL);
 			pthread_mutex_lock(&(data->last_eaten_mutex));
+			// Check first if philosopher thread has already started. could be that last eaten is not even initialized
 			if (time_diff_in_ms(data->tv1, data->last_eaten[id]) > data->ttd)
 			{
 				printf("%ld %d died\n", get_timestamp_in_ms(data), id);
@@ -293,6 +291,17 @@ void	join_all_threads(t_data *data)
 	pthread_join(data->death_thread, NULL);
 }
 
+void	set_last_eaten(t_data *data)
+{
+	int	i;
+
+	i = 0;
+	pthread_mutex_lock(&(data->last_eaten_mutex));
+	while (i < data->num)
+		data->last_eaten[i++] = data->tv0;
+	pthread_mutex_unlock(&(data->last_eaten_mutex));
+}
+
 int	main(int argc, char **argv)
 {
 	t_data	*data;
@@ -303,6 +312,7 @@ int	main(int argc, char **argv)
 	if (data == NULL)
 		return (1);
 	gettimeofday(&(data->tv0), NULL);
+	set_last_eaten(data);
 	start_philosophers(data);
 	pthread_create(&(data->death_thread), NULL, check_deaths, data);
 	join_all_threads(data);
