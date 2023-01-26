@@ -6,7 +6,7 @@
 /*   By: frafal <frafal@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/01/19 11:12:03 by frafal            #+#    #+#             */
-/*   Updated: 2023/01/25 17:27:10 by frafal           ###   ########.fr       */
+/*   Updated: 2023/01/26 13:04:38 by frafal           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -123,6 +123,14 @@ void	*philosopher_thread(void *ptr)
 	{
 		pthread_mutex_unlock(&(data->alive_mutex));
 		pthread_mutex_lock(&(data->waiter));
+		usleep(800000);
+		pthread_mutex_lock(&(data->alive_mutex));
+		if (!data->all_alive)
+		{
+			pthread_mutex_unlock(&(data->waiter));
+			break ;
+		}
+		pthread_mutex_unlock(&(data->alive_mutex));
 		if (data->fork_availability[0] == FORK_FREE && data->fork_availability[1] == FORK_FREE)
 		{
 			data->fork_availability[0] = FORK_USED;
@@ -132,17 +140,25 @@ void	*philosopher_thread(void *ptr)
 			pthread_mutex_lock(data->forks + 1);
 			printf("%ld 0 has taken a fork\n", get_timestamp_in_ms(data));
 			printf("%ld 0 is eating\n", get_timestamp_in_ms(data));
+			pthread_mutex_lock(&(data->last_eaten_mutex));
+			gettimeofday(data->last_eaten + 0, NULL);
+			pthread_mutex_unlock(&(data->last_eaten_mutex));
 			usleep(data->tte * 1000);
 			pthread_mutex_unlock(data->forks + 0);
 			pthread_mutex_unlock(data->forks + 1);
 			data->fork_availability[0] = FORK_FREE;
 			data->fork_availability[1] = FORK_FREE;
 			pthread_mutex_unlock(&(data->waiter));
-			pthread_mutex_lock(&(data->last_eaten_mutex));
-			gettimeofday(data->last_eaten + 0, NULL);
-			pthread_mutex_unlock(&(data->last_eaten_mutex));
+			pthread_mutex_lock(&(data->alive_mutex));
+			if (!data->all_alive)
+				break ;
+			pthread_mutex_unlock(&(data->alive_mutex));
 			printf("%ld 0 is sleeping\n", get_timestamp_in_ms(data));
 			usleep(data->tts * 1000);
+			pthread_mutex_lock(&(data->alive_mutex));
+			if (!data->all_alive)
+				break ;
+			pthread_mutex_unlock(&(data->alive_mutex));
 			printf("%ld 0 is thinking\n", get_timestamp_in_ms(data));
 		}
 		pthread_mutex_lock(&(data->alive_mutex));
