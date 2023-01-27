@@ -6,7 +6,7 @@
 /*   By: frafal <frafal@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/01/19 11:13:11 by frafal            #+#    #+#             */
-/*   Updated: 2023/01/27 09:34:40 by frafal           ###   ########.fr       */
+/*   Updated: 2023/01/27 11:27:05 by frafal           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,10 +42,13 @@ typedef struct s_data
 	pthread_mutex_t	*forks;
 	pthread_mutex_t	print_mutex;
 	pthread_mutex_t	alive_mutex;
+	pthread_mutex_t	queue_mutex;
 	pthread_mutex_t	last_eaten_mutex;
 	int				*fork_availability;
 	int				all_alive;
+	int				*queue;
 }	t_data;
+
 typedef struct s_philo
 {
 	int				id;
@@ -59,6 +62,9 @@ typedef struct s_fork
 	pthread_mutex_t	fork_mutex;
 }	t_fork;
 
-int	ft_atoi(const char *nptr);
+int		ft_atoi(const char *nptr);
+int		*init_queue(t_data *data);
+void	rotate_queue(t_data *data);
+void	print_queue(t_data *data);
 
 #endif

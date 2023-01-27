@@ -6,7 +6,7 @@
 #    By: frafal <frafal@student.42.fr>              +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/01/19 11:03:02 by frafal            #+#    #+#              #
-#    Updated: 2023/01/26 16:23:05 by frafal           ###   ########.fr        #
+#    Updated: 2023/01/27 10:33:44 by frafal           ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -22,7 +22,8 @@ HEADERS			:= $(addprefix ${HEADDIR}, ${HEADLIST})
 
 SRCSDIR			:= ./
 SRCSLIST		:= philo.c \
-					libft.c
+					libft.c \
+					queue.c
 SRCS			:= $(addprefix ${SRCSDIR}, ${SRCSLIST})
 
 OBJSDIR			:= ./obj/

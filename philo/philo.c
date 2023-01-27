@@ -6,7 +6,7 @@
 /*   By: frafal <frafal@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/01/19 11:12:03 by frafal            #+#    #+#             */
-/*   Updated: 2023/01/27 09:47:39 by frafal           ###   ########.fr       */
+/*   Updated: 2023/01/27 11:38:49 by frafal           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -114,6 +114,7 @@ t_data	*init_data(int argc, char **argv)
 	pthread_mutex_init(&(data->alive_mutex), NULL);
 	pthread_mutex_init(&(data->print_mutex), NULL);
 	pthread_mutex_init(&(data->last_eaten_mutex), NULL);
+	pthread_mutex_init(&(data->queue_mutex), NULL);
 	if (init_last_eaten(data) == -1)
 		return (NULL);
 	return (data);
@@ -144,17 +145,24 @@ int	min(int a, int b)
 	return (b);
 }
 
-int	get_next_in_queue(t_data *data)
-{
-	(void)data;
-	// Implement Linked List here? Or rotating index? Or calculate longest time to last_eaten? But they all have the same speed so strict ordering should work?
-	return (1);
-}
-
 int	my_turn(t_philo *philo)
 {
-	if (philo->id == get_next_in_queue(philo->data))
+	pthread_mutex_lock(&(philo->data->alive_mutex));
+	if (!philo->data->all_alive)
+	{		
+		pthread_mutex_unlock(&(philo->data->alive_mutex));
 		return (1);
+	}
+	pthread_mutex_unlock(&(philo->data->alive_mutex));
+	pthread_mutex_lock(&(philo->data->queue_mutex));
+	if (philo->id == philo->data->queue[0])
+	{
+		rotate_queue(philo->data);
+		pthread_mutex_lock(&(philo->data->waiter));
+		pthread_mutex_unlock(&(philo->data->queue_mutex));
+		return (1);
+	}
+	pthread_mutex_unlock(&(philo->data->queue_mutex));
 	return (0);
 }
 
@@ -175,8 +183,9 @@ void	*philosopher_thread(void *ptr)
 	while (data->all_alive)
 	{
 		pthread_mutex_unlock(&(data->alive_mutex));
-		// while (!my_turn(philo));
-		pthread_mutex_lock(&(data->waiter));
+		while (!my_turn(philo))
+			;
+		//pthread_mutex_lock(&(data->waiter));
 		pthread_mutex_lock(&(data->alive_mutex));
 		if (!data->all_alive)
 		{
@@ -248,6 +257,8 @@ void	free_data(t_data *data)
 	pthread_mutex_destroy(&(data->print_mutex));
 	pthread_mutex_destroy(&(data->alive_mutex));
 	pthread_mutex_destroy(&(data->last_eaten_mutex));
+	pthread_mutex_destroy(&(data->queue_mutex));
+	free_null(data->queue);
 	free_null(data->last_eaten);
 	free_null(data);
 }
@@ -298,7 +309,6 @@ void	*check_deaths(void *ptr)
 			pthread_mutex_lock(&(data->last_eaten_mutex));
 			if (time_diff_in_ms(data->tv1, data->last_eaten[id]) > data->ttd)
 			{
-				//printf("time_diff_in_ms %ld, id %d \n", time_diff_in_ms(data->tv1, data->last_eaten[id]), id);
 				printf("%ld %d died\n", get_timestamp_in_ms(data), id);
 				pthread_mutex_lock(&(data->alive_mutex));
 				data->all_alive = 0;
@@ -348,8 +358,16 @@ int	main(int argc, char **argv)
 		return (1);
 	gettimeofday(&(data->tv0), NULL);
 	set_last_eaten(data);
-	if (start_philosophers(data) == -1)
+	if (init_queue(data) == NULL)
+	{
+		free_data(data);
 		return (1);
+	}
+	if (start_philosophers(data) == -1)
+	{
+		free_data(data);
+		return (1);
+	}
 	pthread_create(&(data->death_thread), NULL, check_deaths, data);
 	join_all_threads(data);
 	free_data(data);
@@ -368,9 +386,6 @@ int	main(int argc, char **argv)
 // Handle special cases like just one philosopher
 // Wrap alive checks with printf functions
 // print mutex
-
-// Solve Starvation because of random lock acquisition
-// waiter should prioritize threads that haven't eaten in a long time (smalles last eaten time)
 
 // Solve parallelism
 // Maybe two or multiple waiters to increase parallelism?
