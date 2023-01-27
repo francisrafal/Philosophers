@@ -6,7 +6,7 @@
 /*   By: frafal <frafal@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/01/19 11:12:03 by frafal            #+#    #+#             */
-/*   Updated: 2023/01/27 11:38:49 by frafal           ###   ########.fr       */
+/*   Updated: 2023/01/27 13:44:58 by frafal           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -193,10 +193,10 @@ void	*philosopher_thread(void *ptr)
 			break ;
 		}
 		pthread_mutex_unlock(&(data->alive_mutex));
-		if (data->fork_availability[left] == FORK_FREE && data->fork_availability[right] == FORK_FREE)
-		{
-			data->fork_availability[left] = FORK_USED;
-			data->fork_availability[right] = FORK_USED;
+		//if (data->fork_availability[left] == FORK_FREE && data->fork_availability[right] == FORK_FREE)
+		//{
+			//data->fork_availability[left] = FORK_USED;
+			//data->fork_availability[right] = FORK_USED;
 			pthread_mutex_lock(data->forks + min(left, right));
 			printf("%ld %d has taken a fork\n", get_timestamp_in_ms(data), id);
 			pthread_mutex_lock(data->forks + max(left, right));
@@ -208,8 +208,8 @@ void	*philosopher_thread(void *ptr)
 			usleep(data->tte * 1000);
 			pthread_mutex_unlock(data->forks + max(left, right));
 			pthread_mutex_unlock(data->forks + min(left, right));
-			data->fork_availability[left] = FORK_FREE;
-			data->fork_availability[right] = FORK_FREE;
+			//data->fork_availability[left] = FORK_FREE;
+			//data->fork_availability[right] = FORK_FREE;
 			pthread_mutex_unlock(&(data->waiter));
 			pthread_mutex_lock(&(data->alive_mutex));
 			if (!data->all_alive)
@@ -222,7 +222,7 @@ void	*philosopher_thread(void *ptr)
 				break ;
 			pthread_mutex_unlock(&(data->alive_mutex));
 			printf("%ld %d is thinking\n", get_timestamp_in_ms(data), id);
-		}
+		//}
 		pthread_mutex_lock(&(data->alive_mutex));
 	}
 	pthread_mutex_unlock(&(data->alive_mutex));
@@ -382,12 +382,36 @@ int	main(int argc, char **argv)
 // Check if arguments are positive
 // Check if arguments are valid numbers and not exceeding max ms?
 // Norminette
+// test with --tool=helgrind
+// test with --tool=drd
+// remove fsanitize=thread
 
 // Handle special cases like just one philosopher
 // Wrap alive checks with printf functions
 // print mutex
+// tv1 mutex
 
 // Solve parallelism
 // Maybe two or multiple waiters to increase parallelism?
+// 3 Philo: 1 Waiter
+// 4 Philo: 2 Waiters
+// 5 Philo: 2 Waiters
+// 6 Philo: 3 Waiters
+// 7 Philo: 3 Waiters
+// 8 Philo: 4 Waiter
+// 1, 2, 3, 4, 5
+// 3, 4, 5, 1, 2
+
+// 1, 2, 3, 4
+// 3, 4, 1, 2
+
+// 1, 2, 3, 4, 5, 6
+// 3, 4, 5, 6, 1, 2
+// 5, 6, 1, 2, 3, 4
+
+// 1, 2, 3, 4, 5, 6, 7
+// 3, 4, 5, 6, 7, 1, 2
+// 5, 6, 7, 1, 2, 3, 4
+
 
 // Handle number_of_times_each_philosopher_must_eat
