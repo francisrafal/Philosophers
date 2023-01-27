@@ -6,7 +6,7 @@
 /*   By: frafal <frafal@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/01/19 11:12:03 by frafal            #+#    #+#             */
-/*   Updated: 2023/01/26 16:48:07 by frafal           ###   ########.fr       */
+/*   Updated: 2023/01/27 09:47:39 by frafal           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,11 +16,12 @@ int	argc_correct(int argc)
 {
 	if (argc != 5 && argc != 6)
 	{
-		printf("usage: ./philo number_of_philosophers \
-time_to_die \
-time_to_eat \
-time_to_sleep \
-[number_of_times_each_philosopher_must_eat]\n");
+		printf(
+			"usage: ./philo number_of_philosophers " \
+			"time_to_die " \
+			"time_to_eat " \
+			"time_to_sleep " \
+			"[number_of_times_each_philosopher_must_eat]\n");
 		return (0);
 	}
 	return (1);
@@ -69,21 +70,23 @@ int	init_last_eaten(t_data *data)
 	return (0);
 }
 
-int	init_philosophers(t_data *data)
+t_philo	*init_philosophers(t_data *data)
 {
-	data->philos = malloc(data->num * sizeof (t_philo));
-	if (data->philos == NULL)
+	t_philo	*philos;
+
+	philos = malloc(data->num * sizeof (t_philo));
+	if (philos == NULL)
 	{
 		printf("malloc fail\n");
-		return (-1);
+		return (NULL);
 	}
-	data->philosophers = malloc(data->num * sizeof (pthread_t));
-	if (data->philosophers == NULL)
+	data->philo_threads = malloc(data->num * sizeof (pthread_t));
+	if (data->philo_threads == NULL)
 	{
 		printf("malloc fail\n");
-		return (-1);
+		return (NULL);
 	}
-	return (0);
+	return (philos);
 }
 
 t_data	*init_data(int argc, char **argv)
@@ -106,8 +109,6 @@ t_data	*init_data(int argc, char **argv)
 	if (init_fork_mutex(data) == -1)
 		return (NULL);
 	if (init_fork_availability(data) == -1)
-		return (NULL);
-	if (init_philosophers(data) == -1)
 		return (NULL);
 	pthread_mutex_init(&(data->waiter), NULL);
 	pthread_mutex_init(&(data->alive_mutex), NULL);
@@ -143,6 +144,20 @@ int	min(int a, int b)
 	return (b);
 }
 
+int	get_next_in_queue(t_data *data)
+{
+	(void)data;
+	// Implement Linked List here? Or rotating index? Or calculate longest time to last_eaten? But they all have the same speed so strict ordering should work?
+	return (1);
+}
+
+int	my_turn(t_philo *philo)
+{
+	if (philo->id == get_next_in_queue(philo->data))
+		return (1);
+	return (0);
+}
+
 void	*philosopher_thread(void *ptr)
 {
 	t_philo	*philo;
@@ -156,11 +171,11 @@ void	*philosopher_thread(void *ptr)
 	id = philo->id;
 	left = philo->left;
 	right = philo->right;
-	//printf("%d started\n", id);
 	pthread_mutex_lock(&(data->alive_mutex));
 	while (data->all_alive)
 	{
 		pthread_mutex_unlock(&(data->alive_mutex));
+		// while (!my_turn(philo));
 		pthread_mutex_lock(&(data->waiter));
 		pthread_mutex_lock(&(data->alive_mutex));
 		if (!data->all_alive)
@@ -227,7 +242,7 @@ void	free_fork_mutex(t_data *data)
 void	free_data(t_data *data)
 {
 	free_null(data->fork_availability);
-	free_null(data->philosophers);
+	free_null(data->philo_threads);
 	free_fork_mutex(data);
 	pthread_mutex_destroy(&(data->waiter));
 	pthread_mutex_destroy(&(data->print_mutex));
@@ -244,20 +259,25 @@ void	free_data(t_data *data)
 	exit(EXIT_FAILURE);
 } */
 
-void	start_philosophers(t_data *data)
+int	start_philosophers(t_data *data)
 {
+	t_philo *philos;
 	int	i;
 
+	philos = init_philosophers(data);
+	if (philos == NULL)
+		return (-1);
 	i = 0;
 	while (i < data->num)
 	{
-		data->philos[i].left = i;
-		data->philos[i].right = (i + 1) % data->num;
-		data->philos[i].id = i + 1;
-		data->philos[i].data = data;
-		pthread_create(&(data->philosophers[i]), NULL, philosopher_thread, data->philos + i);
+		philos[i].left = i;
+		philos[i].right = (i + 1) % data->num;
+		philos[i].id = i + 1;
+		philos[i].data = data;
+		pthread_create(&(data->philo_threads[i]), NULL, philosopher_thread, philos + i);
 		i++;
 	}
+	return (0);
 }
 
 void	*check_deaths(void *ptr)
@@ -266,10 +286,10 @@ void	*check_deaths(void *ptr)
 	int		id;
 
 	data = (t_data *)ptr;
-	id = 1;
 	pthread_mutex_lock(&(data->alive_mutex));
 	while (data->all_alive)
 	{
+		id = 1;
 		pthread_mutex_unlock(&(data->alive_mutex));
 		while (id <= data->num)
 		{
@@ -288,7 +308,7 @@ void	*check_deaths(void *ptr)
 			}
 			pthread_mutex_unlock(&(data->last_eaten_mutex));
 			id++;
-			usleep(1000);
+			usleep(2000);
 		}
 		pthread_mutex_lock(&(data->alive_mutex));
 	}
@@ -302,7 +322,7 @@ void	join_all_threads(t_data *data)
 
 	i = 0;
 	while (i < data->num)
-		pthread_join(data->philosophers[i++], NULL);
+		pthread_join(data->philo_threads[i++], NULL);
 	pthread_join(data->death_thread, NULL);
 }
 
@@ -328,7 +348,8 @@ int	main(int argc, char **argv)
 		return (1);
 	gettimeofday(&(data->tv0), NULL);
 	set_last_eaten(data);
-	start_philosophers(data);
+	if (start_philosophers(data) == -1)
+		return (1);
 	pthread_create(&(data->death_thread), NULL, check_deaths, data);
 	join_all_threads(data);
 	free_data(data);
@@ -341,12 +362,17 @@ int	main(int argc, char **argv)
 // Check memory Leaks
 // Check Data Races
 // Check if arguments are positive
+// Check if arguments are valid numbers and not exceeding max ms?
 // Norminette
-// Repair default repository for sync changes in gitlens
+
 // Handle special cases like just one philosopher
-// Update philosopher thread to use the correct forks
 // Wrap alive checks with printf functions
 // print mutex
 
+// Solve Starvation because of random lock acquisition
 // waiter should prioritize threads that haven't eaten in a long time (smalles last eaten time)
-// philosophers don't die when they pass time to die????
+
+// Solve parallelism
+// Maybe two or multiple waiters to increase parallelism?
+
+// Handle number_of_times_each_philosopher_must_eat
