@@ -6,7 +6,7 @@
 /*   By: frafal <frafal@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/01/19 11:12:03 by frafal            #+#    #+#             */
-/*   Updated: 2023/01/27 13:58:24 by frafal           ###   ########.fr       */
+/*   Updated: 2023/01/27 16:58:54 by frafal           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,7 +27,7 @@ int	argc_correct(int argc)
 	return (1);
 }
 
-int	init_fork_mutex(t_data *data)
+int	init_forks(t_data *data)
 {
 	int	i;
 
@@ -40,6 +40,23 @@ int	init_fork_mutex(t_data *data)
 	i = 0;
 	while (i < data->num)
 		pthread_mutex_init(data->forks + i++, NULL);
+	return (0);
+}
+
+int	init_waiters(t_data *data)
+{
+	int	i;
+
+	// Handle if data->num == 1
+	data->waiters = malloc(data->num / 2 * sizeof (pthread_mutex_t));
+	if (data->waiters == NULL)
+	{
+		printf("malloc fail\n");
+		return (-1);
+	}
+	i = 0;
+	while (i < data->num / 2)
+		pthread_mutex_init(data->waiters + i++, NULL);
 	return (0);
 }
 
@@ -90,9 +107,10 @@ t_data	*init_data(int argc, char **argv)
 	data->all_alive = 1;
 	if (argc == 6)
 		data->eat_times = ft_atoi(argv[5]);
-	if (init_fork_mutex(data) == -1)
+	if (init_forks(data) == -1)
 		return (NULL);
-	pthread_mutex_init(&(data->waiter), NULL);
+	if (init_waiters(data) == -1)
+		return (NULL);
 	pthread_mutex_init(&(data->alive_mutex), NULL);
 	pthread_mutex_init(&(data->print_mutex), NULL);
 	pthread_mutex_init(&(data->last_eaten_mutex), NULL);
@@ -129,6 +147,8 @@ int	min(int a, int b)
 
 int	my_turn(t_philo *philo)
 {
+	int	i;
+
 	pthread_mutex_lock(&(philo->data->alive_mutex));
 	if (!philo->data->all_alive)
 	{		
@@ -137,13 +157,26 @@ int	my_turn(t_philo *philo)
 	}
 	pthread_mutex_unlock(&(philo->data->alive_mutex));
 	pthread_mutex_lock(&(philo->data->queue_mutex));
-	if (philo->id == philo->data->queue[0])
-	{
-		rotate_queue(philo->data);
-		pthread_mutex_lock(&(philo->data->waiter));
-		pthread_mutex_unlock(&(philo->data->queue_mutex));
-		return (1);
-	}
+	i = philo->waiter_id;
+	//while (i < philo->data->num / 2)
+	//{	
+		//printf("philo id = %d\n", philo->id);
+		if (philo->id == philo->data->queue[i])
+		{
+			philo->waiter_id = i;
+			pthread_mutex_lock(&(philo->data->waiters[i]));
+			if (philo->data->queue[i] == philo->data->num)
+				philo->data->queue[i] = 1;
+			else
+				philo->data->queue[i] = philo->data->queue[i] + 1;
+			// printf("queue[%d]: ", i);
+			// print_queue(philo->data);
+			pthread_mutex_unlock(&(philo->data->queue_mutex));
+			return (1);
+		}
+		// printf("hello\n");
+		//i++;
+	//}
 	pthread_mutex_unlock(&(philo->data->queue_mutex));
 	return (0);
 }
@@ -170,7 +203,7 @@ void	*philosopher_thread(void *ptr)
 		pthread_mutex_lock(&(data->alive_mutex));
 		if (!data->all_alive)
 		{
-			pthread_mutex_unlock(&(data->waiter));
+			pthread_mutex_unlock(&(data->waiters[philo->waiter_id]));
 			break ;
 		}
 		pthread_mutex_unlock(&(data->alive_mutex));
@@ -185,7 +218,7 @@ void	*philosopher_thread(void *ptr)
 		usleep(data->tte * 1000);
 		pthread_mutex_unlock(data->forks + max(left, right));
 		pthread_mutex_unlock(data->forks + min(left, right));
-		pthread_mutex_unlock(&(data->waiter));
+		pthread_mutex_unlock(&(data->waiters[philo->waiter_id]));
 		pthread_mutex_lock(&(data->alive_mutex));
 		if (!data->all_alive)
 			break ;
@@ -212,7 +245,7 @@ void	free_null(void *ptr)
 	}
 }
 
-void	free_fork_mutex(t_data *data)
+void	free_forks(t_data *data)
 {
 	int	i;
 
@@ -222,11 +255,21 @@ void	free_fork_mutex(t_data *data)
 	free_null(data->forks);
 }
 
+void	free_waiters(t_data *data)
+{
+	int	i;
+
+	i = 0;
+	while (i < data->num / 2)
+		pthread_mutex_destroy(data->waiters + i++);
+	free_null(data->waiters);
+}
+
 void	free_data(t_data *data)
 {
 	free_null(data->philo_threads);
-	free_fork_mutex(data);
-	pthread_mutex_destroy(&(data->waiter));
+	free_forks(data);
+	free_waiters(data);
 	pthread_mutex_destroy(&(data->print_mutex));
 	pthread_mutex_destroy(&(data->alive_mutex));
 	pthread_mutex_destroy(&(data->last_eaten_mutex));
@@ -246,16 +289,23 @@ void	free_data(t_data *data)
 void	start_philosophers(t_data *data, t_philo *philos)
 {
 	int	i;
+	int	j;
 
-	i = 0;
-	while (i < data->num)
+	j = 0;
+	while (j < 2)
 	{
-		philos[i].left = i;
-		philos[i].right = (i + 1) % data->num;
-		philos[i].id = i + 1;
-		philos[i].data = data;
-		pthread_create(&(data->philo_threads[i]), NULL, philosopher_thread, philos + i);
-		i++;
+		i = j;
+		while (i < data->num)
+		{
+			philos[i].left = i;
+			philos[i].right = (i + 1) % data->num;
+			philos[i].id = i + 1;
+			philos[i].data = data;
+			philos[i].waiter_id = i / 2;
+			pthread_create(&(data->philo_threads[i]), NULL, philosopher_thread, philos + i);
+			i = i + 2;
+		}
+		j++;
 	}
 }
 
@@ -332,6 +382,7 @@ int	main(int argc, char **argv)
 		free_data(data);
 		return (1);
 	}
+	// print_queue(data);
 	philos = init_philosophers(data);
 	if (philos == NULL)
 	{
@@ -387,3 +438,6 @@ int	main(int argc, char **argv)
 
 
 // Handle number_of_times_each_philosopher_must_eat
+// Problems with 5, 6 and 7 waiters
+// Should it really depend on how I start the threads?
+// unlocking mutex that is already unlocked
