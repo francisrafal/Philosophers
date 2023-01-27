@@ -6,7 +6,7 @@
 /*   By: frafal <frafal@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/01/19 11:13:11 by frafal            #+#    #+#             */
-/*   Updated: 2023/01/27 11:27:05 by frafal           ###   ########.fr       */
+/*   Updated: 2023/01/27 13:46:37 by frafal           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,7 +44,6 @@ typedef struct s_data
 	pthread_mutex_t	alive_mutex;
 	pthread_mutex_t	queue_mutex;
 	pthread_mutex_t	last_eaten_mutex;
-	int				*fork_availability;
 	int				all_alive;
 	int				*queue;
 }	t_data;

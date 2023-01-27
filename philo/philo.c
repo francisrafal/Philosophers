@@ -6,7 +6,7 @@
 /*   By: frafal <frafal@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/01/19 11:12:03 by frafal            #+#    #+#             */
-/*   Updated: 2023/01/27 13:44:58 by frafal           ###   ########.fr       */
+/*   Updated: 2023/01/27 13:58:24 by frafal           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,22 +40,6 @@ int	init_fork_mutex(t_data *data)
 	i = 0;
 	while (i < data->num)
 		pthread_mutex_init(data->forks + i++, NULL);
-	return (0);
-}
-
-int	init_fork_availability(t_data *data)
-{
-	int	i;
-
-	data->fork_availability = malloc(data->num * sizeof (int));
-	if (data->fork_availability == NULL)
-	{
-		printf("malloc fail\n");
-		return (-1);
-	}
-	i = 0;
-	while (i < data->num)
-		data->fork_availability[i++] = FORK_FREE;
 	return (0);
 }
 
@@ -107,8 +91,6 @@ t_data	*init_data(int argc, char **argv)
 	if (argc == 6)
 		data->eat_times = ft_atoi(argv[5]);
 	if (init_fork_mutex(data) == -1)
-		return (NULL);
-	if (init_fork_availability(data) == -1)
 		return (NULL);
 	pthread_mutex_init(&(data->waiter), NULL);
 	pthread_mutex_init(&(data->alive_mutex), NULL);
@@ -185,7 +167,6 @@ void	*philosopher_thread(void *ptr)
 		pthread_mutex_unlock(&(data->alive_mutex));
 		while (!my_turn(philo))
 			;
-		//pthread_mutex_lock(&(data->waiter));
 		pthread_mutex_lock(&(data->alive_mutex));
 		if (!data->all_alive)
 		{
@@ -193,36 +174,29 @@ void	*philosopher_thread(void *ptr)
 			break ;
 		}
 		pthread_mutex_unlock(&(data->alive_mutex));
-		//if (data->fork_availability[left] == FORK_FREE && data->fork_availability[right] == FORK_FREE)
-		//{
-			//data->fork_availability[left] = FORK_USED;
-			//data->fork_availability[right] = FORK_USED;
-			pthread_mutex_lock(data->forks + min(left, right));
-			printf("%ld %d has taken a fork\n", get_timestamp_in_ms(data), id);
-			pthread_mutex_lock(data->forks + max(left, right));
-			printf("%ld %d has taken a fork\n", get_timestamp_in_ms(data), id);
-			printf("%ld %d is eating\n", get_timestamp_in_ms(data), id);
-			pthread_mutex_lock(&(data->last_eaten_mutex));
-			gettimeofday(data->last_eaten + id, NULL);
-			pthread_mutex_unlock(&(data->last_eaten_mutex));
-			usleep(data->tte * 1000);
-			pthread_mutex_unlock(data->forks + max(left, right));
-			pthread_mutex_unlock(data->forks + min(left, right));
-			//data->fork_availability[left] = FORK_FREE;
-			//data->fork_availability[right] = FORK_FREE;
-			pthread_mutex_unlock(&(data->waiter));
-			pthread_mutex_lock(&(data->alive_mutex));
-			if (!data->all_alive)
-				break ;
-			pthread_mutex_unlock(&(data->alive_mutex));
-			printf("%ld %d is sleeping\n", get_timestamp_in_ms(data), id);
-			usleep(data->tts * 1000);
-			pthread_mutex_lock(&(data->alive_mutex));
-			if (!data->all_alive)
-				break ;
-			pthread_mutex_unlock(&(data->alive_mutex));
-			printf("%ld %d is thinking\n", get_timestamp_in_ms(data), id);
-		//}
+		pthread_mutex_lock(data->forks + min(left, right));
+		printf("%ld %d has taken a fork\n", get_timestamp_in_ms(data), id);
+		pthread_mutex_lock(data->forks + max(left, right));
+		printf("%ld %d has taken a fork\n", get_timestamp_in_ms(data), id);
+		printf("%ld %d is eating\n", get_timestamp_in_ms(data), id);
+		pthread_mutex_lock(&(data->last_eaten_mutex));
+		gettimeofday(data->last_eaten + id, NULL);
+		pthread_mutex_unlock(&(data->last_eaten_mutex));
+		usleep(data->tte * 1000);
+		pthread_mutex_unlock(data->forks + max(left, right));
+		pthread_mutex_unlock(data->forks + min(left, right));
+		pthread_mutex_unlock(&(data->waiter));
+		pthread_mutex_lock(&(data->alive_mutex));
+		if (!data->all_alive)
+			break ;
+		pthread_mutex_unlock(&(data->alive_mutex));
+		printf("%ld %d is sleeping\n", get_timestamp_in_ms(data), id);
+		usleep(data->tts * 1000);
+		pthread_mutex_lock(&(data->alive_mutex));
+		if (!data->all_alive)
+			break ;
+		pthread_mutex_unlock(&(data->alive_mutex));
+		printf("%ld %d is thinking\n", get_timestamp_in_ms(data), id);
 		pthread_mutex_lock(&(data->alive_mutex));
 	}
 	pthread_mutex_unlock(&(data->alive_mutex));
@@ -250,7 +224,6 @@ void	free_fork_mutex(t_data *data)
 
 void	free_data(t_data *data)
 {
-	free_null(data->fork_availability);
 	free_null(data->philo_threads);
 	free_fork_mutex(data);
 	pthread_mutex_destroy(&(data->waiter));
@@ -270,14 +243,10 @@ void	free_data(t_data *data)
 	exit(EXIT_FAILURE);
 } */
 
-int	start_philosophers(t_data *data)
+void	start_philosophers(t_data *data, t_philo *philos)
 {
-	t_philo *philos;
 	int	i;
 
-	philos = init_philosophers(data);
-	if (philos == NULL)
-		return (-1);
 	i = 0;
 	while (i < data->num)
 	{
@@ -288,7 +257,6 @@ int	start_philosophers(t_data *data)
 		pthread_create(&(data->philo_threads[i]), NULL, philosopher_thread, philos + i);
 		i++;
 	}
-	return (0);
 }
 
 void	*check_deaths(void *ptr)
@@ -350,6 +318,7 @@ void	set_last_eaten(t_data *data)
 int	main(int argc, char **argv)
 {
 	t_data	*data;
+	t_philo	*philos;
 
 	if (!argc_correct(argc))
 		return (1);
@@ -363,14 +332,17 @@ int	main(int argc, char **argv)
 		free_data(data);
 		return (1);
 	}
-	if (start_philosophers(data) == -1)
+	philos = init_philosophers(data);
+	if (philos == NULL)
 	{
 		free_data(data);
 		return (1);
 	}
+	start_philosophers(data, philos);
 	pthread_create(&(data->death_thread), NULL, check_deaths, data);
 	join_all_threads(data);
 	free_data(data);
+	free_null(philos);
 	return (0);
 }
 
