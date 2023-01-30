@@ -6,7 +6,7 @@
 #    By: frafal <frafal@student.42.fr>              +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/01/19 11:03:02 by frafal            #+#    #+#              #
-#    Updated: 2023/01/30 14:10:45 by frafal           ###   ########.fr        #
+#    Updated: 2023/01/30 15:41:12 by frafal           ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -24,7 +24,14 @@ SRCSDIR			:= ./
 SRCSLIST		:= philo.c \
 					libft.c \
 					queue.c \
-					states.c
+					states.c \
+					init.c \
+					free.c \
+					death.c \
+					time.c \
+					math.c \
+					error.c \
+					threads.c
 SRCS			:= $(addprefix ${SRCSDIR}, ${SRCSLIST})
 
 OBJSDIR			:= ./obj/
