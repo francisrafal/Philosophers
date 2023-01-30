@@ -6,7 +6,7 @@
 /*   By: frafal <frafal@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/01/19 11:13:11 by frafal            #+#    #+#             */
-/*   Updated: 2023/01/27 15:17:54 by frafal           ###   ########.fr       */
+/*   Updated: 2023/01/30 13:36:15 by frafal           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,14 +17,11 @@
 # include <unistd.h>
 # include <stdio.h>
 # include <sys/time.h>
-/*
-# define EATING 1
-# define SLEEPING 2
-# define THINKING 3
-# define DEAD 0
-*/
-# define FORK_USED 0
-# define FORK_FREE 1
+# define MSG_TAKE_FORK 0
+# define MSG_EATING 1
+# define MSG_SLEEPING 2
+# define MSG_THINKING 3
+# define MSG_DIED 4
 
 typedef struct s_data
 {
@@ -41,6 +38,7 @@ typedef struct s_data
 	pthread_mutex_t	*waiters;
 	pthread_mutex_t	*forks;
 	pthread_mutex_t	print_mutex;
+	pthread_mutex_t	tv1_mutex;
 	pthread_mutex_t	alive_mutex;
 	pthread_mutex_t	queue_mutex;
 	pthread_mutex_t	last_eaten_mutex;

@@ -6,7 +6,7 @@
 /*   By: frafal <frafal@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/01/19 11:12:03 by frafal            #+#    #+#             */
-/*   Updated: 2023/01/27 16:58:54 by frafal           ###   ########.fr       */
+/*   Updated: 2023/01/30 13:51:02 by frafal           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,6 +25,55 @@ int	argc_correct(int argc)
 		return (0);
 	}
 	return (1);
+}
+
+int	still_alive(t_data *data)
+{
+	pthread_mutex_lock(&(data->alive_mutex));
+	if (!data->all_alive)
+	{
+		pthread_mutex_unlock(&(data->alive_mutex));
+		return (0);
+	}
+	pthread_mutex_unlock(&(data->alive_mutex));
+	return (1);
+}
+
+void	gettimeofday_safe(t_data *data)
+{
+	pthread_mutex_lock(&(data->tv1_mutex));
+	gettimeofday(&(data->tv1), NULL);
+	pthread_mutex_unlock(&(data->tv1_mutex));
+}
+
+long	time_diff_in_ms(struct timeval a, struct timeval b)
+{
+	return ((a.tv_sec - b.tv_sec) * 1000 + (a.tv_usec - b.tv_usec) / 1000);
+}
+
+long	get_timestamp_in_ms(t_data *data)
+{
+	gettimeofday_safe(data);
+	return (time_diff_in_ms(data->tv1, data->tv0));
+}
+
+void	print_msg(int msg, t_data *data, int id)
+{
+	long	time;
+
+	time = get_timestamp_in_ms(data);
+	pthread_mutex_lock(&(data->print_mutex));
+	if (msg == MSG_TAKE_FORK)
+		printf("%ld %d has taken a fork\n", time, id);
+	else if (msg == MSG_EATING)
+		printf("%ld %d is eating\n", time, id);
+	else if (msg == MSG_SLEEPING)
+		printf("%ld %d is sleeping\n", time, id);
+	else if (msg == MSG_THINKING)
+		printf("%ld %d is thinking\n", time, id);
+	else if (msg == MSG_DIED)
+		printf("%ld %d died\n", time, id);
+	pthread_mutex_unlock(&(data->print_mutex));
 }
 
 int	init_forks(t_data *data)
@@ -62,7 +111,7 @@ int	init_waiters(t_data *data)
 
 int	init_last_eaten(t_data *data)
 {
-	data->last_eaten = malloc((data->num + 1)* sizeof (struct timeval));
+	data->last_eaten = malloc((data->num + 1) * sizeof (struct timeval));
 	if (data->last_eaten == NULL)
 	{
 		printf("malloc fail\n");
@@ -113,22 +162,12 @@ t_data	*init_data(int argc, char **argv)
 		return (NULL);
 	pthread_mutex_init(&(data->alive_mutex), NULL);
 	pthread_mutex_init(&(data->print_mutex), NULL);
+	pthread_mutex_init(&(data->tv1_mutex), NULL);
 	pthread_mutex_init(&(data->last_eaten_mutex), NULL);
 	pthread_mutex_init(&(data->queue_mutex), NULL);
 	if (init_last_eaten(data) == -1)
 		return (NULL);
 	return (data);
-}
-
-long	time_diff_in_ms(struct timeval a, struct timeval b)
-{
-	return ((a.tv_sec - b.tv_sec) * 1000 + (a.tv_usec - b.tv_usec) / 1000);
-}
-
-long	get_timestamp_in_ms(t_data *data)
-{
-	gettimeofday(&(data->tv1), NULL);
-	return (time_diff_in_ms(data->tv1, data->tv0));
 }
 
 int	max(int	a, int b)
@@ -149,35 +188,76 @@ int	my_turn(t_philo *philo)
 {
 	int	i;
 
-	pthread_mutex_lock(&(philo->data->alive_mutex));
-	if (!philo->data->all_alive)
-	{		
-		pthread_mutex_unlock(&(philo->data->alive_mutex));
+	if (!still_alive(philo->data))
 		return (1);
-	}
-	pthread_mutex_unlock(&(philo->data->alive_mutex));
 	pthread_mutex_lock(&(philo->data->queue_mutex));
 	i = philo->waiter_id;
-	//while (i < philo->data->num / 2)
-	//{	
-		//printf("philo id = %d\n", philo->id);
-		if (philo->id == philo->data->queue[i])
-		{
-			philo->waiter_id = i;
-			pthread_mutex_lock(&(philo->data->waiters[i]));
-			if (philo->data->queue[i] == philo->data->num)
-				philo->data->queue[i] = 1;
-			else
-				philo->data->queue[i] = philo->data->queue[i] + 1;
-			// printf("queue[%d]: ", i);
-			// print_queue(philo->data);
-			pthread_mutex_unlock(&(philo->data->queue_mutex));
-			return (1);
-		}
-		// printf("hello\n");
-		//i++;
-	//}
+	if (philo->id == philo->data->queue[i])
+	{
+		philo->waiter_id = i;
+		if (philo->data->queue[i] == philo->data->num)
+			philo->data->queue[i] = 1;
+		else
+			philo->data->queue[i] = philo->data->queue[i] + 1;
+		pthread_mutex_unlock(&(philo->data->queue_mutex));
+		return (1);
+	}
 	pthread_mutex_unlock(&(philo->data->queue_mutex));
+	return (0);
+}
+
+int	philo_take_forks(t_data *data, t_philo *philo)
+{
+	int		left;
+	int		right;
+	int		id;
+
+	if (!still_alive(data))
+		return (-1);
+	left = philo->left;
+	right = philo->right;
+	id = philo->id;
+	pthread_mutex_lock(data->forks + min(left, right));
+	print_msg(MSG_TAKE_FORK, data, id);
+	pthread_mutex_lock(data->forks + max(left, right));
+	print_msg(MSG_TAKE_FORK, data, id);
+	return (0);
+}
+
+void	philo_put_forks(t_data *data, t_philo *philo)
+{
+	int		left;
+	int		right;
+
+	left = philo->left;
+	right = philo->right;
+	pthread_mutex_unlock(data->forks + max(left, right));
+	pthread_mutex_unlock(data->forks + min(left, right));
+}
+
+void	philo_eat(t_data *data, t_philo *philo)
+{
+	print_msg(MSG_EATING, data, philo->id);
+	pthread_mutex_lock(&(data->last_eaten_mutex));
+	gettimeofday(data->last_eaten + philo->id, NULL);
+	pthread_mutex_unlock(&(data->last_eaten_mutex));
+	usleep(data->tte * 1000);
+}
+
+int	philo_sleep(t_data *data, t_philo *philo)
+{
+	if (!still_alive(data))
+		return (-1);
+	print_msg(MSG_SLEEPING, data, philo->id);
+	usleep(data->tts * 1000);
+	return (0);
+}
+
+int	philo_think(t_data *data, t_philo *philo)
+{
+	if (!still_alive(data))
+		return (-1);
+	print_msg(MSG_THINKING, data, philo->id);
 	return (0);
 }
 
@@ -185,54 +265,27 @@ void	*philosopher_thread(void *ptr)
 {
 	t_philo	*philo;
 	t_data	*data;
-	int		id;
-	int		left;
-	int		right;
 
 	philo = (t_philo *)ptr;
 	data = philo->data;
-	id = philo->id;
-	left = philo->left;
-	right = philo->right;
-	pthread_mutex_lock(&(data->alive_mutex));
-	while (data->all_alive)
+	while (still_alive(data))
 	{
-		pthread_mutex_unlock(&(data->alive_mutex));
 		while (!my_turn(philo))
 			;
-		pthread_mutex_lock(&(data->alive_mutex));
-		if (!data->all_alive)
+		pthread_mutex_lock(&(data->waiters[philo->waiter_id]));
+		if (philo_take_forks(data, philo) == -1)
 		{
 			pthread_mutex_unlock(&(data->waiters[philo->waiter_id]));
 			break ;
 		}
-		pthread_mutex_unlock(&(data->alive_mutex));
-		pthread_mutex_lock(data->forks + min(left, right));
-		printf("%ld %d has taken a fork\n", get_timestamp_in_ms(data), id);
-		pthread_mutex_lock(data->forks + max(left, right));
-		printf("%ld %d has taken a fork\n", get_timestamp_in_ms(data), id);
-		printf("%ld %d is eating\n", get_timestamp_in_ms(data), id);
-		pthread_mutex_lock(&(data->last_eaten_mutex));
-		gettimeofday(data->last_eaten + id, NULL);
-		pthread_mutex_unlock(&(data->last_eaten_mutex));
-		usleep(data->tte * 1000);
-		pthread_mutex_unlock(data->forks + max(left, right));
-		pthread_mutex_unlock(data->forks + min(left, right));
+		philo_eat(data, philo);
+		philo_put_forks(data, philo);
 		pthread_mutex_unlock(&(data->waiters[philo->waiter_id]));
-		pthread_mutex_lock(&(data->alive_mutex));
-		if (!data->all_alive)
+		if (philo_sleep(data, philo) == -1)
 			break ;
-		pthread_mutex_unlock(&(data->alive_mutex));
-		printf("%ld %d is sleeping\n", get_timestamp_in_ms(data), id);
-		usleep(data->tts * 1000);
-		pthread_mutex_lock(&(data->alive_mutex));
-		if (!data->all_alive)
+		if (philo_think(data, philo) == -1)
 			break ;
-		pthread_mutex_unlock(&(data->alive_mutex));
-		printf("%ld %d is thinking\n", get_timestamp_in_ms(data), id);
-		pthread_mutex_lock(&(data->alive_mutex));
 	}
-	pthread_mutex_unlock(&(data->alive_mutex));
 	return (NULL);
 }
 
@@ -271,6 +324,7 @@ void	free_data(t_data *data)
 	free_forks(data);
 	free_waiters(data);
 	pthread_mutex_destroy(&(data->print_mutex));
+	pthread_mutex_destroy(&(data->tv1_mutex));
 	pthread_mutex_destroy(&(data->alive_mutex));
 	pthread_mutex_destroy(&(data->last_eaten_mutex));
 	pthread_mutex_destroy(&(data->queue_mutex));
@@ -278,13 +332,6 @@ void	free_data(t_data *data)
 	free_null(data->last_eaten);
 	free_null(data);
 }
-
-/* void	print_error_exit(char *errmsg, t_data *data)
-{
-	ft_putstr_fd(errmsg, 2);
-	free_data(data);
-	exit(EXIT_FAILURE);
-} */
 
 void	start_philosophers(t_data *data, t_philo *philos)
 {
@@ -309,38 +356,45 @@ void	start_philosophers(t_data *data, t_philo *philos)
 	}
 }
 
+struct timeval	get_last_eaten(t_data *data, int id)
+{
+	struct timeval	last_eaten;
+
+	pthread_mutex_lock(&(data->last_eaten_mutex));
+	last_eaten = data->last_eaten[id];
+	pthread_mutex_unlock(&(data->last_eaten_mutex));
+	return (last_eaten);
+}
+
+void	philo_dead(t_data *data, int id)
+{
+	print_msg(MSG_DIED, data, id);
+	pthread_mutex_lock(&(data->alive_mutex));
+	data->all_alive = 0;
+	pthread_mutex_unlock(&(data->alive_mutex));
+}
+
 void	*check_deaths(void *ptr)
 {
 	t_data	*data;
 	int		id;
 
 	data = (t_data *)ptr;
-	pthread_mutex_lock(&(data->alive_mutex));
-	while (data->all_alive)
+	while (still_alive(data))
 	{
 		id = 1;
-		pthread_mutex_unlock(&(data->alive_mutex));
 		while (id <= data->num)
 		{
-			// maybe mutex gettimeofday?
-			gettimeofday(&(data->tv1), NULL);
-			pthread_mutex_lock(&(data->last_eaten_mutex));
-			if (time_diff_in_ms(data->tv1, data->last_eaten[id]) > data->ttd)
+			gettimeofday_safe(data);
+			if (time_diff_in_ms(data->tv1, get_last_eaten(data, id)) > data->ttd)
 			{
-				printf("%ld %d died\n", get_timestamp_in_ms(data), id);
-				pthread_mutex_lock(&(data->alive_mutex));
-				data->all_alive = 0;
-				pthread_mutex_unlock(&(data->alive_mutex));
-				pthread_mutex_unlock(&(data->last_eaten_mutex));
+				philo_dead(data, id);
 				break ;
 			}
-			pthread_mutex_unlock(&(data->last_eaten_mutex));
 			id++;
 			usleep(2000);
 		}
-		pthread_mutex_lock(&(data->alive_mutex));
 	}
-	pthread_mutex_unlock(&(data->alive_mutex));
 	return (NULL);
 }
 
@@ -358,7 +412,7 @@ void	set_last_eaten(t_data *data)
 {
 	int	id;
 
-	id = 0;
+	id = 1;
 	pthread_mutex_lock(&(data->last_eaten_mutex));
 	while (id <= data->num)
 		data->last_eaten[id++] = data->tv0;
@@ -410,9 +464,6 @@ int	main(int argc, char **argv)
 // remove fsanitize=thread
 
 // Handle special cases like just one philosopher
-// Wrap alive checks with printf functions
-// print mutex
-// tv1 mutex
 
 // Solve parallelism
 // Maybe two or multiple waiters to increase parallelism?
@@ -440,4 +491,4 @@ int	main(int argc, char **argv)
 // Handle number_of_times_each_philosopher_must_eat
 // Problems with 5, 6 and 7 waiters
 // Should it really depend on how I start the threads?
-// unlocking mutex that is already unlocked
+// Remove philo executable in remote repository
