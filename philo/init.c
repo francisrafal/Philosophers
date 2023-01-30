@@ -6,7 +6,7 @@
 /*   By: frafal <frafal@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/01/30 15:27:43 by frafal            #+#    #+#             */
-/*   Updated: 2023/01/30 15:28:55 by frafal           ###   ########.fr       */
+/*   Updated: 2023/01/30 16:49:27 by frafal           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,6 +29,22 @@ t_philo	*init_philosophers(t_data *data)
 		return (NULL);
 	}
 	return (philos);
+}
+
+int	init_fork_array(t_data *data)
+{
+	int	i;
+
+	data->fork_array = malloc(data->num * sizeof (int));
+	if (data->fork_array == NULL)
+	{
+		printf("malloc fail\n");
+		return (-1);
+	}
+	i = 0;
+	while (i < data->num)
+        data->fork_array[i] = FORK_FREE;
+	return (0);
 }
 
 t_data	*init_data(int argc, char **argv)

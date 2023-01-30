@@ -6,7 +6,7 @@
 /*   By: frafal <frafal@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/01/19 11:13:11 by frafal            #+#    #+#             */
-/*   Updated: 2023/01/30 14:14:16 by frafal           ###   ########.fr       */
+/*   Updated: 2023/01/30 17:26:41 by frafal           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,6 +22,7 @@
 # define MSG_SLEEPING 2
 # define MSG_THINKING 3
 # define MSG_DIED 4
+# define FORK_FREE 1
 
 typedef struct s_data
 {
@@ -45,6 +46,7 @@ typedef struct s_data
 	int				all_alive;
 	int				*queue;
 	int				num_waiters;
+	int				*fork_array;
 }	t_data;
 
 typedef struct s_philo

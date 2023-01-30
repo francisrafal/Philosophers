@@ -6,7 +6,7 @@
 /*   By: frafal <frafal@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/01/30 14:07:55 by frafal            #+#    #+#             */
-/*   Updated: 2023/01/30 14:08:45 by frafal           ###   ########.fr       */
+/*   Updated: 2023/01/30 17:16:31 by frafal           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,14 +18,18 @@ int	philo_take_forks(t_data *data, t_philo *philo)
 	int		right;
 	int		id;
 
-	if (!still_alive(data))
-		return (-1);
 	left = philo->left;
 	right = philo->right;
 	id = philo->id;
 	pthread_mutex_lock(data->forks + min(left, right));
+	if (!still_alive(data))
+		return (-1);
+	if (philo->id % 2 == 0)
+		usleep(400);
 	print_msg(MSG_TAKE_FORK, data, id);
 	pthread_mutex_lock(data->forks + max(left, right));
+	if (!still_alive(data))
+		return (-1);
 	print_msg(MSG_TAKE_FORK, data, id);
 	return (0);
 }

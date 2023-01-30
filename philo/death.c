@@ -6,7 +6,7 @@
 /*   By: frafal <frafal@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/01/30 15:32:48 by frafal            #+#    #+#             */
-/*   Updated: 2023/01/30 15:33:52 by frafal           ###   ########.fr       */
+/*   Updated: 2023/01/30 16:14:53 by frafal           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -50,7 +50,6 @@ void	*check_deaths(void *ptr)
 				break ;
 			}
 			id++;
-			usleep(2000);
 		}
 	}
 	return (NULL);

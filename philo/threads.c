@@ -6,7 +6,7 @@
 /*   By: frafal <frafal@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/01/30 15:40:34 by frafal            #+#    #+#             */
-/*   Updated: 2023/01/30 15:40:56 by frafal           ###   ########.fr       */
+/*   Updated: 2023/01/30 15:44:16 by frafal           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -64,17 +64,17 @@ void	*philosopher_thread(void *ptr)
 	data = philo->data;
 	while (still_alive(data))
 	{
-		while (!my_turn(philo))
-			;
-		pthread_mutex_lock(&(data->waiters[philo->waiter_id]));
+		//while (!my_turn(philo))
+			//;
+		// pthread_mutex_lock(&(data->waiters[philo->waiter_id]));
 		if (philo_take_forks(data, philo) == -1)
 		{
-			pthread_mutex_unlock(&(data->waiters[philo->waiter_id]));
+			// pthread_mutex_unlock(&(data->waiters[philo->waiter_id]));
 			break ;
 		}
 		philo_eat(data, philo);
 		philo_put_forks(data, philo);
-		pthread_mutex_unlock(&(data->waiters[philo->waiter_id]));
+		// pthread_mutex_unlock(&(data->waiters[philo->waiter_id]));
 		if (philo_sleep(data, philo) == -1)
 			break ;
 		if (philo_think(data, philo) == -1)
@@ -98,7 +98,7 @@ void	start_philosophers(t_data *data, t_philo *philos)
 			philos[i].right = (i + 1) % data->num;
 			philos[i].id = i + 1;
 			philos[i].data = data;
-			philos[i].waiter_id = i / 2;
+//			philos[i].waiter_id = i / 2;
 			pthread_create(&(data->philo_threads[i]), NULL, philosopher_thread, philos + i);
 			i = i + 2;
 		}

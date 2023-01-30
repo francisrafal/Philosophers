@@ -6,7 +6,7 @@
 /*   By: frafal <frafal@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/01/19 11:12:03 by frafal            #+#    #+#             */
-/*   Updated: 2023/01/30 15:41:03 by frafal           ###   ########.fr       */
+/*   Updated: 2023/01/30 16:34:09 by frafal           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,11 +24,13 @@ int	main(int argc, char **argv)
 		return (1);
 	gettimeofday(&(data->tv0), NULL);
 	set_last_eaten(data);
+	/*
 	if (init_queue(data) == NULL)
 	{
 		free_data(data);
 		return (1);
 	}
+	*/
 	// print_queue(data);
 	philos = init_philosophers(data);
 	if (philos == NULL)
@@ -85,3 +87,9 @@ int	main(int argc, char **argv)
 // Problems with 5, 6 and 7 waiters
 // Should it really depend on how I start the threads?
 // Remove philo executable in remote repository
+
+
+// PROBLEMS WITHOUT WAITER:
+// 5 800 200 200 someone dies after some time, i have to implement a queue
+
+// check return values of mutex init and destroy
