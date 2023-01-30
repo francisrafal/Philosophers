@@ -6,7 +6,7 @@
 /*   By: frafal <frafal@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/01/19 11:12:03 by frafal            #+#    #+#             */
-/*   Updated: 2023/01/30 13:51:02 by frafal           ###   ########.fr       */
+/*   Updated: 2023/01/30 14:08:52 by frafal           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,22 +46,22 @@ void	gettimeofday_safe(t_data *data)
 	pthread_mutex_unlock(&(data->tv1_mutex));
 }
 
-long	time_diff_in_ms(struct timeval a, struct timeval b)
+long	time_diff(struct timeval a, struct timeval b)
 {
 	return ((a.tv_sec - b.tv_sec) * 1000 + (a.tv_usec - b.tv_usec) / 1000);
 }
 
-long	get_timestamp_in_ms(t_data *data)
+long	get_timestamp(t_data *data)
 {
 	gettimeofday_safe(data);
-	return (time_diff_in_ms(data->tv1, data->tv0));
+	return (time_diff(data->tv1, data->tv0));
 }
 
 void	print_msg(int msg, t_data *data, int id)
 {
 	long	time;
 
-	time = get_timestamp_in_ms(data);
+	time = get_timestamp(data);
 	pthread_mutex_lock(&(data->print_mutex));
 	if (msg == MSG_TAKE_FORK)
 		printf("%ld %d has taken a fork\n", time, id);
@@ -96,15 +96,18 @@ int	init_waiters(t_data *data)
 {
 	int	i;
 
-	// Handle if data->num == 1
-	data->waiters = malloc(data->num / 2 * sizeof (pthread_mutex_t));
+	if (data->num == 1)
+		data->num_waiters = 1;
+	else
+		data->num_waiters = data->num / 2;
+	data->waiters = malloc(data->num_waiters * sizeof (pthread_mutex_t));
 	if (data->waiters == NULL)
 	{
 		printf("malloc fail\n");
 		return (-1);
 	}
 	i = 0;
-	while (i < data->num / 2)
+	while (i < data->num_waiters)
 		pthread_mutex_init(data->waiters + i++, NULL);
 	return (0);
 }
@@ -191,9 +194,11 @@ int	my_turn(t_philo *philo)
 	if (!still_alive(philo->data))
 		return (1);
 	pthread_mutex_lock(&(philo->data->queue_mutex));
+	// DOES THIS MAKE SENSE?
 	i = philo->waiter_id;
 	if (philo->id == philo->data->queue[i])
 	{
+		// DOES THIS MAKE SENSE?
 		philo->waiter_id = i;
 		if (philo->data->queue[i] == philo->data->num)
 			philo->data->queue[i] = 1;
@@ -203,61 +208,6 @@ int	my_turn(t_philo *philo)
 		return (1);
 	}
 	pthread_mutex_unlock(&(philo->data->queue_mutex));
-	return (0);
-}
-
-int	philo_take_forks(t_data *data, t_philo *philo)
-{
-	int		left;
-	int		right;
-	int		id;
-
-	if (!still_alive(data))
-		return (-1);
-	left = philo->left;
-	right = philo->right;
-	id = philo->id;
-	pthread_mutex_lock(data->forks + min(left, right));
-	print_msg(MSG_TAKE_FORK, data, id);
-	pthread_mutex_lock(data->forks + max(left, right));
-	print_msg(MSG_TAKE_FORK, data, id);
-	return (0);
-}
-
-void	philo_put_forks(t_data *data, t_philo *philo)
-{
-	int		left;
-	int		right;
-
-	left = philo->left;
-	right = philo->right;
-	pthread_mutex_unlock(data->forks + max(left, right));
-	pthread_mutex_unlock(data->forks + min(left, right));
-}
-
-void	philo_eat(t_data *data, t_philo *philo)
-{
-	print_msg(MSG_EATING, data, philo->id);
-	pthread_mutex_lock(&(data->last_eaten_mutex));
-	gettimeofday(data->last_eaten + philo->id, NULL);
-	pthread_mutex_unlock(&(data->last_eaten_mutex));
-	usleep(data->tte * 1000);
-}
-
-int	philo_sleep(t_data *data, t_philo *philo)
-{
-	if (!still_alive(data))
-		return (-1);
-	print_msg(MSG_SLEEPING, data, philo->id);
-	usleep(data->tts * 1000);
-	return (0);
-}
-
-int	philo_think(t_data *data, t_philo *philo)
-{
-	if (!still_alive(data))
-		return (-1);
-	print_msg(MSG_THINKING, data, philo->id);
 	return (0);
 }
 
@@ -313,7 +263,7 @@ void	free_waiters(t_data *data)
 	int	i;
 
 	i = 0;
-	while (i < data->num / 2)
+	while (i < data->num_waiters)
 		pthread_mutex_destroy(data->waiters + i++);
 	free_null(data->waiters);
 }
@@ -386,7 +336,7 @@ void	*check_deaths(void *ptr)
 		while (id <= data->num)
 		{
 			gettimeofday_safe(data);
-			if (time_diff_in_ms(data->tv1, get_last_eaten(data, id)) > data->ttd)
+			if (time_diff(data->tv1, get_last_eaten(data, id)) > data->ttd)
 			{
 				philo_dead(data, id);
 				break ;
