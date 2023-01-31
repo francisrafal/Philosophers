@@ -6,7 +6,7 @@
 /*   By: frafal <frafal@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/01/19 11:13:11 by frafal            #+#    #+#             */
-/*   Updated: 2023/01/31 19:20:01 by frafal           ###   ########.fr       */
+/*   Updated: 2023/01/31 19:45:03 by frafal           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,7 +22,6 @@
 # define MSG_SLEEPING 2
 # define MSG_THINKING 3
 # define MSG_DIED 4
-# define FORK_FREE 1
 
 typedef struct s_data
 {
@@ -91,5 +90,8 @@ void			join_all_threads(t_data *data);
 void			set_last_eaten(t_data *data);
 void			stop_philos(t_data *data);
 int				invalid_nums(t_data *data);
+int				init_mutexes(t_data *data);
+int				philo_take_forks_even(t_data *data, t_philo *philo);
+int				philo_take_forks_odd(t_data *data, t_philo *philo);
 
 #endif

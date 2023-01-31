@@ -6,7 +6,7 @@
 /*   By: frafal <frafal@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/01/19 11:12:03 by frafal            #+#    #+#             */
-/*   Updated: 2023/01/31 19:26:23 by frafal           ###   ########.fr       */
+/*   Updated: 2023/01/31 19:33:01 by frafal           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,7 +15,6 @@
 int	main(int argc, char **argv)
 {
 	t_data	*data;
-	//t_philo	*philos;
 
 	if (!argc_correct(argc))
 		return (1);
@@ -38,5 +37,3 @@ int	main(int argc, char **argv)
 		return (1);
 	return (0);
 }
-
-// Norminette

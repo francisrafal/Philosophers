@@ -6,7 +6,7 @@
 /*   By: frafal <frafal@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/01/30 15:27:43 by frafal            #+#    #+#             */
-/*   Updated: 2023/01/31 19:20:24 by frafal           ###   ########.fr       */
+/*   Updated: 2023/01/31 19:36:35 by frafal           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,27 +46,33 @@ t_data	*init_data(int argc, char **argv)
 	data->tte = ft_atoi(argv[3]);
 	data->tts = ft_atoi(argv[4]);
 	data->all_alive = 1;
+	data->eat_times = 0;
 	if (argc == 6)
 		data->eat_times = ft_atoi(argv[5]);
-	else
-		data->eat_times = 0;
 	if (invalid_nums(data))
 		return (NULL);
 	if (init_forks(data) == -1)
 		return (NULL);
-	if (pthread_mutex_init(&(data->alive_mutex), NULL))
-		return (NULL);
-	if (pthread_mutex_init(&(data->print_mutex), NULL))
-		return (NULL);
-	if (pthread_mutex_init(&(data->tv1_mutex), NULL))
-		return (NULL);
-	if (pthread_mutex_init(&(data->last_eaten_mutex), NULL))
-		return (NULL);
-	if (pthread_mutex_init(&(data->philos_mutex), NULL))
+	if (init_mutexes(data))
 		return (NULL);
 	if (init_last_eaten(data) == -1)
 		return (NULL);
 	return (data);
+}
+
+int	init_mutexes(t_data *data)
+{
+	if (pthread_mutex_init(&(data->alive_mutex), NULL))
+		return (-1);
+	if (pthread_mutex_init(&(data->print_mutex), NULL))
+		return (-1);
+	if (pthread_mutex_init(&(data->tv1_mutex), NULL))
+		return (-1);
+	if (pthread_mutex_init(&(data->last_eaten_mutex), NULL))
+		return (-1);
+	if (pthread_mutex_init(&(data->philos_mutex), NULL))
+		return (-1);
+	return (0);
 }
 
 int	init_forks(t_data *data)
