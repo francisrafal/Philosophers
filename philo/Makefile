@@ -6,7 +6,7 @@
 #    By: frafal <frafal@student.42.fr>              +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/01/19 11:03:02 by frafal            #+#    #+#              #
-#    Updated: 2023/01/30 17:16:00 by frafal           ###   ########.fr        #
+#    Updated: 2023/01/31 16:50:23 by frafal           ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -38,7 +38,7 @@ OBJSDIR			:= ./obj/
 OBJSLIST		:= ${SRCSLIST:.c=.o}
 OBJS			:= $(addprefix ${OBJSDIR}, ${OBJSLIST})
 
-LIBS			:=# -lpthread
+LIBS			:=
 INCS			:= -I${HEADDIR} 
 
 CYAN			:= \033[0;36m
