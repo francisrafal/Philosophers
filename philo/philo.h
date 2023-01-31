@@ -6,7 +6,7 @@
 /*   By: frafal <frafal@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/01/19 11:13:11 by frafal            #+#    #+#             */
-/*   Updated: 2023/01/31 17:18:20 by frafal           ###   ########.fr       */
+/*   Updated: 2023/01/31 17:33:38 by frafal           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -77,9 +77,9 @@ t_data			*init_data(int argc, char **argv);
 int				my_turn(t_philo *philo);
 void			*philosopher_thread(void *ptr);
 void			free_null(void *ptr);
-void			free_forks(t_data *data);
+int				free_forks(t_data *data);
 void			free_waiters(t_data *data);
-void			free_data(t_data *data);
+int				free_data(t_data *data);
 void			start_philosophers(t_data *data, t_philo *philos);
 struct timeval	get_last_eaten(t_data *data, int id);
 void			philo_dead(t_data *data, int id);
