@@ -6,7 +6,7 @@
 /*   By: frafal <frafal@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/01/19 11:12:03 by frafal            #+#    #+#             */
-/*   Updated: 2023/01/30 16:34:09 by frafal           ###   ########.fr       */
+/*   Updated: 2023/01/31 16:44:52 by frafal           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,14 +24,6 @@ int	main(int argc, char **argv)
 		return (1);
 	gettimeofday(&(data->tv0), NULL);
 	set_last_eaten(data);
-	/*
-	if (init_queue(data) == NULL)
-	{
-		free_data(data);
-		return (1);
-	}
-	*/
-	// print_queue(data);
 	philos = init_philosophers(data);
 	if (philos == NULL)
 	{
