@@ -6,17 +6,21 @@
 /*   By: frafal <frafal@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/01/30 15:36:17 by frafal            #+#    #+#             */
-/*   Updated: 2023/01/30 15:38:14 by frafal           ###   ########.fr       */
+/*   Updated: 2023/01/31 17:19:22 by frafal           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "philo.h"
 
-void	gettimeofday_safe(t_data *data)
+struct timeval	gettimeofday_safe(t_data *data)
 {
+	struct timeval	time;
+
 	pthread_mutex_lock(&(data->tv1_mutex));
 	gettimeofday(&(data->tv1), NULL);
+	time = data->tv1;
 	pthread_mutex_unlock(&(data->tv1_mutex));
+	return (time);
 }
 
 long	time_diff(struct timeval a, struct timeval b)

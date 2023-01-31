@@ -6,7 +6,7 @@
 /*   By: frafal <frafal@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/01/19 11:12:03 by frafal            #+#    #+#             */
-/*   Updated: 2023/01/31 16:44:52 by frafal           ###   ########.fr       */
+/*   Updated: 2023/01/31 17:02:12 by frafal           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -52,36 +52,7 @@ int	main(int argc, char **argv)
 
 // Handle special cases like just one philosopher
 
-// Solve parallelism
-// Maybe two or multiple waiters to increase parallelism?
-// 3 Philo: 1 Waiter
-// 4 Philo: 2 Waiters
-// 5 Philo: 2 Waiters
-// 6 Philo: 3 Waiters
-// 7 Philo: 3 Waiters
-// 8 Philo: 4 Waiter
-// 1, 2, 3, 4, 5
-// 3, 4, 5, 1, 2
-
-// 1, 2, 3, 4
-// 3, 4, 1, 2
-
-// 1, 2, 3, 4, 5, 6
-// 3, 4, 5, 6, 1, 2
-// 5, 6, 1, 2, 3, 4
-
-// 1, 2, 3, 4, 5, 6, 7
-// 3, 4, 5, 6, 7, 1, 2
-// 5, 6, 7, 1, 2, 3, 4
-
-
 // Handle number_of_times_each_philosopher_must_eat
-// Problems with 5, 6 and 7 waiters
-// Should it really depend on how I start the threads?
-// Remove philo executable in remote repository
-
-
-// PROBLEMS WITHOUT WAITER:
-// 5 800 200 200 someone dies after some time, i have to implement a queue
 
 // check return values of mutex init and destroy
+// REMOVE DEBUG FLAGS

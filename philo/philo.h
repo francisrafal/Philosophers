@@ -6,7 +6,7 @@
 /*   By: frafal <frafal@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/01/19 11:13:11 by frafal            #+#    #+#             */
-/*   Updated: 2023/01/31 16:52:45 by frafal           ###   ########.fr       */
+/*   Updated: 2023/01/31 17:18:20 by frafal           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -65,7 +65,7 @@ int				philo_sleep(t_data *data, t_philo *philo);
 int				philo_think(t_data *data, t_philo *philo);
 int				argc_correct(int argc);
 int				still_alive(t_data *data);
-void			gettimeofday_safe(t_data *data);
+struct timeval	gettimeofday_safe(t_data *data);
 long			time_diff(struct timeval a, struct timeval b);
 long			get_timestamp(t_data *data);
 void			print_msg(int msg, t_data *data, int id);

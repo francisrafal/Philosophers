@@ -6,7 +6,7 @@
 /*   By: frafal <frafal@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/01/30 15:32:48 by frafal            #+#    #+#             */
-/*   Updated: 2023/01/30 16:14:53 by frafal           ###   ########.fr       */
+/*   Updated: 2023/01/31 17:24:19 by frafal           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,8 +34,10 @@ void	philo_dead(t_data *data, int id)
 
 void	*check_deaths(void *ptr)
 {
-	t_data	*data;
-	int		id;
+	t_data			*data;
+	int				id;
+	struct timeval	now;
+	struct timeval	last_eaten;
 
 	data = (t_data *)ptr;
 	while (still_alive(data))
@@ -43,8 +45,9 @@ void	*check_deaths(void *ptr)
 		id = 1;
 		while (id <= data->num)
 		{
-			gettimeofday_safe(data);
-			if (time_diff(data->tv1, get_last_eaten(data, id)) > data->ttd)
+			now = gettimeofday_safe(data);
+			last_eaten = get_last_eaten(data, id);
+			if (time_diff(now, last_eaten) > data->ttd)
 			{
 				philo_dead(data, id);
 				break ;
