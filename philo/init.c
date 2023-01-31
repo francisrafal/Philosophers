@@ -6,7 +6,7 @@
 /*   By: frafal <frafal@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/01/30 15:27:43 by frafal            #+#    #+#             */
-/*   Updated: 2023/01/31 17:36:50 by frafal           ###   ########.fr       */
+/*   Updated: 2023/01/31 19:20:24 by frafal           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -48,6 +48,10 @@ t_data	*init_data(int argc, char **argv)
 	data->all_alive = 1;
 	if (argc == 6)
 		data->eat_times = ft_atoi(argv[5]);
+	else
+		data->eat_times = 0;
+	if (invalid_nums(data))
+		return (NULL);
 	if (init_forks(data) == -1)
 		return (NULL);
 	if (pthread_mutex_init(&(data->alive_mutex), NULL))
@@ -57,6 +61,8 @@ t_data	*init_data(int argc, char **argv)
 	if (pthread_mutex_init(&(data->tv1_mutex), NULL))
 		return (NULL);
 	if (pthread_mutex_init(&(data->last_eaten_mutex), NULL))
+		return (NULL);
+	if (pthread_mutex_init(&(data->philos_mutex), NULL))
 		return (NULL);
 	if (init_last_eaten(data) == -1)
 		return (NULL);

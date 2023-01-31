@@ -6,7 +6,7 @@
 /*   By: frafal <frafal@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/01/30 14:07:55 by frafal            #+#    #+#             */
-/*   Updated: 2023/01/31 17:05:08 by frafal           ###   ########.fr       */
+/*   Updated: 2023/01/31 19:22:48 by frafal           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,6 +21,13 @@ int	philo_take_forks(t_data *data, t_philo *philo)
 	left = philo->left;
 	right = philo->right;
 	id = philo->id;
+	if (data->num == 1)
+	{
+		pthread_mutex_lock(data->forks + left);
+		print_msg(MSG_TAKE_FORK, data, id);
+		pthread_mutex_unlock(data->forks + left);
+		return (-1);
+	}
 	if (philo->id % 2 == 0)
 	{	
 		pthread_mutex_lock(data->forks + right);
@@ -74,6 +81,9 @@ void	philo_put_forks(t_data *data, t_philo *philo)
 void	philo_eat(t_data *data, t_philo *philo)
 {
 	print_msg(MSG_EATING, data, philo->id);
+	pthread_mutex_lock(&(data->philos_mutex));
+	philo->times_eaten++;
+	pthread_mutex_unlock(&(data->philos_mutex));
 	pthread_mutex_lock(&(data->last_eaten_mutex));
 	gettimeofday(data->last_eaten + philo->id, NULL);
 	pthread_mutex_unlock(&(data->last_eaten_mutex));

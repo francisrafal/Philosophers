@@ -6,7 +6,7 @@
 /*   By: frafal <frafal@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/01/30 15:37:22 by frafal            #+#    #+#             */
-/*   Updated: 2023/01/30 15:37:42 by frafal           ###   ########.fr       */
+/*   Updated: 2023/01/31 19:10:08 by frafal           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,4 +25,24 @@ int	argc_correct(int argc)
 		return (0);
 	}
 	return (1);
+}
+
+int	invalid_nums(t_data *data)
+{
+	int	invalid;
+
+	invalid = 0;
+	if (data->num < 1)
+		invalid++;
+	if (data->ttd < 0)
+		invalid++;
+	if (data->tte < 0)
+		invalid++;
+	if (data->tts < 0)
+		invalid++;
+	if (data->eat_times < 0)
+		invalid++;
+	if (invalid)
+		free(data);
+	return (invalid);
 }

@@ -6,7 +6,7 @@
 /*   By: frafal <frafal@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/01/30 15:30:55 by frafal            #+#    #+#             */
-/*   Updated: 2023/01/31 17:38:53 by frafal           ###   ########.fr       */
+/*   Updated: 2023/01/31 19:20:59 by frafal           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,6 +47,8 @@ int	free_data(t_data *data)
 	if (pthread_mutex_destroy(&(data->alive_mutex)))
 		return (-1);
 	if (pthread_mutex_destroy(&(data->last_eaten_mutex)))
+		return (-1);
+	if (pthread_mutex_destroy(&(data->philos_mutex)))
 		return (-1);
 	free_null(data->last_eaten);
 	free_null(data);

@@ -6,7 +6,7 @@
 /*   By: frafal <frafal@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/01/30 15:40:34 by frafal            #+#    #+#             */
-/*   Updated: 2023/01/31 16:45:52 by frafal           ###   ########.fr       */
+/*   Updated: 2023/01/31 18:40:22 by frafal           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,9 +41,7 @@ void	*philosopher_thread(void *ptr)
 	while (still_alive(data))
 	{
 		if (philo_take_forks(data, philo) == -1)
-		{
 			break ;
-		}
 		philo_eat(data, philo);
 		philo_put_forks(data, philo);
 		if (philo_sleep(data, philo) == -1)
@@ -65,6 +63,7 @@ void	start_philosophers(t_data *data, t_philo *philos)
 		philos[i].right = (i + 1) % data->num;
 		philos[i].id = i + 1;
 		philos[i].data = data;
+		philos[i].times_eaten = 0;
 		pthread_create(&(data->philo_threads[i]), NULL, philosopher_thread, philos + i);
 		i++;
 	}

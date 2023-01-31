@@ -6,7 +6,7 @@
 #    By: frafal <frafal@student.42.fr>              +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/01/19 11:03:02 by frafal            #+#    #+#              #
-#    Updated: 2023/01/31 17:25:49 by frafal           ###   ########.fr        #
+#    Updated: 2023/01/31 19:26:33 by frafal           ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -14,7 +14,7 @@ NAME			:= philo
 CC				:= cc
 RM		    	:= rm -f
 FLAGS			:= -Wall -Wextra -Werror -pthread 
-DEBUG			:= -g #-fsanitize=thread
+DEBUG			:= #-g -fsanitize=thread
 
 HEADDIR			:= ./
 HEADLIST		:= philo.h

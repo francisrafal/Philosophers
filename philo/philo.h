@@ -6,7 +6,7 @@
 /*   By: frafal <frafal@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/01/19 11:13:11 by frafal            #+#    #+#             */
-/*   Updated: 2023/01/31 17:33:38 by frafal           ###   ########.fr       */
+/*   Updated: 2023/01/31 19:20:01 by frafal           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,7 +41,9 @@ typedef struct s_data
 	pthread_mutex_t	tv1_mutex;
 	pthread_mutex_t	alive_mutex;
 	pthread_mutex_t	last_eaten_mutex;
+	pthread_mutex_t	philos_mutex;
 	int				all_alive;
+	struct s_philo	*philos;
 }	t_data;
 
 typedef struct s_philo
@@ -49,6 +51,7 @@ typedef struct s_philo
 	int				id;
 	int				left;
 	int				right;
+	int				times_eaten;
 	struct s_data	*data;
 }	t_philo;
 
@@ -86,5 +89,7 @@ void			philo_dead(t_data *data, int id);
 void			*check_deaths(void *ptr);
 void			join_all_threads(t_data *data);
 void			set_last_eaten(t_data *data);
+void			stop_philos(t_data *data);
+int				invalid_nums(t_data *data);
 
 #endif
